@@ -1,0 +1,2426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
+  <vendor>Commodore Business Machines</vendor>
+  <vendorID>CBM</vendorID>
+  <name>C64</name>
+  <series>Commodore 64</series>
+  <version>0.1.0</version>
+  <description>
+    Commodore 64 memory-mapped I/O: MOS 6510 on-chip port, VIC-II (6567 NTSC / 6569 PAL),
+    SID (6581/8580), CIA1/CIA2 (6526), and color RAM.
+
+    Assumptions and limits of this description:
+    1. The map below is only visible when the PLA banks I/O in: CPUPORT.R6510 bit CHAREN=1
+       and not (LORAM=0 and HIRAM=0), with EXROM/GAME inactive (no cartridge). With CHAREN=0
+       the character ROM appears at 0xD000-0xDFFF instead; with LORAM=HIRAM=0 it is RAM.
+       SVD has no way to express this banking; software must own the CPUPORT.R6510 state.
+    2. Register images repeat within each chip's page: VIC-II every 0x40 bytes in
+       0xD000-0xD3FF, SID every 0x20 in 0xD400-0xD7FF, each CIA every 0x10 in its page.
+       Registers are described once at the base image.
+    3. Interrupts: the 6510 has fixed-vector IRQ (0xFFFE) and NMI (0xFFFA); there is no
+       NVIC, so no interrupt elements are declared. VIC-II and CIA1 assert IRQ; CIA2 and
+       the RESTORE key assert NMI. With KERNAL banked in, vectors indirect through RAM at
+       0x0314/0x0316/0x0318.
+    4. PHI2 = 985248 Hz (PAL) / 1022727 Hz (NTSC); CIA timers count PHI2.
+    5. Power-on register state is undefined unless a chip specifies otherwise; resetMask=0
+       encodes that.
+    6. ROM and RAM conventions are out of scope for an SVD: BASIC ROM 0xA000-0xBFFF,
+       KERNAL ROM 0xE000-0xFFFF, character ROM at 0xD000 when CHAREN=0, the KERNAL's
+       default screen at 0x0400, and sprite shape pointers at screen+0x3F8 (fetched by
+       VIC DMA) belong to a BSP layer.
+    7. Bus stalls are not modeled: the VIC halts CPU reads via BA/AEC on badlines and for
+       sprite fetches. CIA timers keep counting PHI2 during stalls, so timer-based delays
+       stay accurate while instruction-counted busy loops do not.
+    8. Chip revisions are not distinguished (6526 vs 6526A interrupt-acknowledge timing;
+       6581 vs 8580 filter response and write-only readback decay; raster geometry
+       6569 = 312 lines x 63 cycles, 6567R8 = 263 x 65, 6567R56A = 262 x 64).
+  </description>
+  <licenseText>Hardware register facts are public domain. This file: CC0-1.0.</licenseText>
+  <cpu>
+    <name>other</name> <!-- MOS 6510: no CMSIS enum value exists -->
+    <revision>r0p0</revision>
+    <endian>little</endian>
+    <mpuPresent>false</mpuPresent>
+    <fpuPresent>false</fpuPresent>
+    <nvicPrioBits>2</nvicPrioBits> <!-- placeholder: schema requires it, 6510 has no NVIC -->
+    <vendorSystickConfig>false</vendorSystickConfig>
+  </cpu>
+  <addressUnitBits>8</addressUnitBits>
+  <width>8</width>
+  <size>8</size>
+  <access>read-write</access>
+  <resetValue>0x00</resetValue>
+  <resetMask>0x00</resetMask>
+  <peripherals>
+
+    <peripheral>
+      <name>CPUPORT</name>
+      <description>
+        MOS 6510 on-chip I/O port at addresses 0x0000-0x0001: memory banking control and
+        Datassette lines. NOTE for svd2rust: baseAddress 0 makes the generated RegisterBlock
+        pointer null, which is unsound to dereference in Rust; either exclude this
+        peripheral from generation and hand-write the two accessors, or patch the
+        generated code. KERNAL reset writes D6510=0x2F, R6510=0x37.
+      </description>
+      <baseAddress>0x0000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x2</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>D6510</name>
+          <description>
+            Data-direction register for the 6510's on-chip I/O port (R6510): one bit per
+            line, 1 = output, 0 = input. The 6510 is a 6502 with this 6-bit port bolted on;
+            it is the whole reason the C64 can map 64 KiB RAM + 20 KiB ROM + 4 KiB I/O
+            (= 88 KiB (!)) into a single 64 KiB address space with no external MMU. KERNAL
+            reset writes 0x2F (0b0010_1111): lines 0-3 and 5 are outputs, line 4 (cassette
+            sense) is an input, and bits 6-7 are unused (no port line). Written
+            before R6510 during reset. The RAM byte physically at 0x0000 still exists but
+            is hidden behind the port.
+          </description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>LORAM</name>
+              <description>Direction of the LORAM line (R6510 bit 0)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>HIRAM</name>
+              <description>Direction of the HIRAM line (R6510 bit 1)</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="D6510.LORAM.Direction"/>
+            </field>
+            <field>
+              <name>CHAREN</name>
+              <description>Direction of the CHAREN line (R6510 bit 2)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="D6510.LORAM.Direction"/>
+            </field>
+            <field>
+              <name>CASS_WRITE</name>
+              <description>Direction of the CASS_WRITE line (R6510 bit 3)</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="D6510.LORAM.Direction"/>
+            </field>
+            <field>
+              <name>CASS_SENSE</name>
+              <description>Direction of the CASS_SENSE line (R6510 bit 4)</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="D6510.LORAM.Direction"/>
+            </field>
+            <field>
+              <name>CASS_MOTOR</name>
+              <description>Direction of the CASS_MOTOR line (R6510 bit 5)</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="D6510.LORAM.Direction"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>R6510</name>
+          <description>Banking and Datassette port. Reads return pin state for input bits.</description>
+          <addressOffset>0x1</addressOffset>
+          <fields>
+            <field>
+              <name>LORAM</name>
+              <description>1 = BASIC ROM at 0xA000-0xBFFF (with HIRAM=1), 0 = RAM</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Loram</name>
+                <enumeratedValue><name>Ram</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>BasicRom</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>HIRAM</name>
+              <description>1 = KERNAL ROM at 0xE000-0xFFFF, 0 = RAM</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Hiram</name>
+                <enumeratedValue><name>Ram</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>KernalRom</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>CHAREN</name>
+              <description>1 = I/O at 0xD000-0xDFFF, 0 = character ROM (RAM if LORAM=HIRAM=0)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Charen</name>
+                <enumeratedValue><name>CharRom</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Io</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>CASS_WRITE</name>
+              <description>Datassette write line</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CASS_SENSE</name>
+              <description>Datassette sense (input): 0 = a button is pressed</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Button</name>
+                <enumeratedValue><name>Pressed</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Released</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>CASS_MOTOR</name>
+              <description>Datassette motor: 0 = on, 1 = off</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>CassMotor</name>
+                <enumeratedValue><name>Running</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Stopped</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>VIC</name>
+      <description>
+        VIC-II video interface (6567 NTSC / 6569 PAL) at 0xD000. Register image repeats
+        every 0x40 bytes through 0xD3FF. Unimplemented bits read as 1. Addresses 0xD02F-0xD03F are not implemented on the 6567/6569: they read 0xFF and writes have no effect. Caveat: on a C128 in C64 mode, the VIC-IIe does implement 0xD02F (extended keyboard lines) and 0xD030 (2 MHz clock control) at these addresses. The VIC addresses
+        16 KiB selected by CIA2.CI2PRA bits 0-1. IRQ output drives the 6510 IRQ line.
+      </description>
+      <baseAddress>0xD000</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x40</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <dim>8</dim>
+          <dimIncrement>2</dimIncrement>
+          <name>SP%sX</name>
+          <description>Sprite X position bits 7:0 (bit 8 in MSIGX)</description>
+          <addressOffset>0x00</addressOffset>
+          <fields>
+            <field>
+              <name>POSITION</name>
+              <description>Sprite X position, low 8 bits (bit 8 in MSIGX)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>8</dim>
+          <dimIncrement>2</dimIncrement>
+          <name>SP%sY</name>
+          <description>Sprite Y position</description>
+          <addressOffset>0x01</addressOffset>
+          <fields>
+            <field>
+              <name>POSITION</name>
+              <description>Sprite Y position</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>MSIGX</name>
+          <description>Sprite X position bit 8; bit n belongs to sprite n</description>
+          <addressOffset>0x10</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s X position bit 8</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SCROLY</name>
+          <description>Control register 1. RST8 reads current raster bit 8, writes raster-compare bit 8.</description>
+          <addressOffset>0x11</addressOffset>
+          <fields>
+            <field>
+              <name>YSCROLL</name>
+              <description>Vertical fine scroll (0-7)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>3</bitWidth>
+            </field>
+            <field>
+              <name>ROW_SELECT</name>
+              <description>Text area height: 24 or 25 rows</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>RowSelect</name>
+                <enumeratedValue><name>Rows24</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Rows25</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SCREEN</name>
+              <description>Enable the display; Disabled blanks the screen to border color</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Enable</name>
+                <enumeratedValue><name>Disabled</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Enabled</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>BITMAP_MODE</name>
+              <description>Bitmap graphics mode</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>EXTENDED_COLOR_MODE</name>
+              <description>Extended background color mode</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>RST8</name>
+              <description>Raster bit 8 (read: current line; write: raster-IRQ compare)</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>RASTER_R</name>
+          <description>Current raster line, bits 7:0 (bit 8 = SCROLY.RST8). Read-only view of 0xD012. Read and write are different registers at this address; the write view is RASTER_W, so neither exposes `.modify()`.</description>
+          <addressOffset>0x12</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>RASTER_W</name>
+          <description>Raster line at which a raster IRQ fires (compare), bits 7:0 (bit 8 = SCROLY.RST8). Write-only alternate view of 0xD012; the current-line read view is RASTER_R.</description>
+          <addressOffset>0x12</addressOffset>
+          <alternateRegister>RASTER_R</alternateRegister>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>RASTER_LINE</name>
+              <description>Raster line at which a raster IRQ fires, low 8 bits (bit 8 in SCROLY.RST8)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>LPENX</name>
+          <description>Light pen X (2-pixel resolution)</description>
+          <addressOffset>0x13</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>LPENY</name>
+          <description>Light pen Y</description>
+          <addressOffset>0x14</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>SPENA</name>
+          <description>Sprite enable, bit n = sprite n</description>
+          <addressOffset>0x15</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s enabled</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SCROLX</name>
+          <description>Control register 2. Bits 6-7 unimplemented, read as 1.</description>
+          <addressOffset>0x16</addressOffset>
+          <fields>
+            <field>
+              <name>XSCROLL</name>
+              <description>Horizontal fine scroll (0-7)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>3</bitWidth>
+            </field>
+            <field>
+              <name>COLUMN_SELECT</name>
+              <description>Text area width: 38 or 40 columns</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>ColumnSelect</name>
+                <enumeratedValue><name>Col38</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Col40</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>MULTICOLOR_MODE</name>
+              <description>Multicolor mode</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>RES</name>
+              <description>No function on 6567/6569</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>YXPAND</name>
+          <description>Sprite Y expansion, bit n = sprite n</description>
+          <addressOffset>0x17</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s vertically expanded</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>VMCSB</name>
+          <description>Memory pointers within the current VIC bank. Bit 0 unimplemented.</description>
+          <addressOffset>0x18</addressOffset>
+          <fields>
+            <field>
+              <name>CHAR_BASE</name>
+              <description>Character/bitmap base address bits 13:11</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>3</bitWidth>
+            </field>
+            <field>
+              <name>VIDEO_MATRIX</name>
+              <description>Video matrix (screen) base address bits 13:10</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>VICIRQ_R</name>
+          <description>Interrupt latch (read-only view of 0xD019): which VIC sources have fired. Bit 7 reads Latched while any enabled source is latched; bits 4-6 read as 1. Acknowledge via VICIRQ_W.</description>
+          <addressOffset>0x19</addressOffset>
+          <access>read-only</access>
+          <fields>
+            <field><name>RASTER</name><description>Raster compare reached</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Latch</name>
+                <enumeratedValue><name>Inactive</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Latched</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field><name>SPRITE_BG_COLLISION</name><description>Sprite-background collision</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_R.RASTER.Latch"/>
+            </field>
+            <field><name>SPRITE_SPRITE_COLLISION</name><description>Sprite-sprite collision</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_R.RASTER.Latch"/>
+            </field>
+            <field><name>LIGHT_PEN</name><description>Light pen</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_R.RASTER.Latch"/>
+            </field>
+            <field><name>IRQ</name><description>Any enabled source latched</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_R.RASTER.Latch"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>VICIRQ_W</name>
+          <description>Acknowledge latched VIC interrupts (write-only alternate view of 0xD019, write-1-to-clear). Writing Ack to a bit clears that source; Keep (0) leaves its flag pending. There is no read here - read status via VICIRQ_R. SIDE-EFFECT: an enabled source left un-acked re-asserts the IRQ immediately.</description>
+          <addressOffset>0x19</addressOffset>
+          <alternateRegister>VICIRQ_R</alternateRegister>
+          <access>write-only</access>
+          <modifiedWriteValues>oneToClear</modifiedWriteValues>
+          <fields>
+            <field><name>RASTER</name><description>Acknowledge raster-compare interrupt</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Ack</name>
+                <enumeratedValue><name>Keep</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Ack</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field><name>SPRITE_BG_COLLISION</name><description>Acknowledge sprite-background collision interrupt</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_W.RASTER.Ack"/>
+            </field>
+            <field><name>SPRITE_SPRITE_COLLISION</name><description>Acknowledge sprite-sprite collision interrupt</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_W.RASTER.Ack"/>
+            </field>
+            <field><name>LIGHT_PEN</name><description>Acknowledge light-pen interrupt</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VICIRQ_W.RASTER.Ack"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>IRQMASK</name>
+          <description>Interrupt enable for the four VICIRQ_R sources (same bit positions)</description>
+          <addressOffset>0x1A</addressOffset>
+          <fields>
+            <field>
+              <name>RASTER</name>
+              <description>Enable raster interrupt</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>SPRITE_BG_COLLISION</name>
+              <description>Enable sprite-background collision interrupt</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>SPRITE_SPRITE_COLLISION</name>
+              <description>Enable sprite-sprite collision interrupt</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>LIGHT_PEN</name>
+              <description>Enable light pen interrupt</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPBGPR</name>
+          <description>Sprite-to-background priority, bit n = sprite n (1 = background in front)</description>
+          <addressOffset>0x1B</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s drawn behind background (1 = behind)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Priority</name>
+                <enumeratedValue><name>InFront</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Behind</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPMC</name>
+          <description>Sprite multicolor enable, bit n = sprite n</description>
+          <addressOffset>0x1C</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s multicolor</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>XXPAND</name>
+          <description>Sprite X expansion, bit n = sprite n</description>
+          <addressOffset>0x1D</addressOffset>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s horizontally expanded</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPSPCL</name>
+          <description>Sprite-sprite collision latch. SIDE-EFFECT: reading clears the latch - read once and keep the value.</description>
+          <addressOffset>0x1E</addressOffset>
+          <access>read-only</access>
+          <readAction>clear</readAction>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s collided with another sprite</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Collision</name>
+                <enumeratedValue><name>Clear</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Collided</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPBGCL</name>
+          <description>Sprite-background collision latch. SIDE-EFFECT: reading clears the latch - read once and keep the value.</description>
+          <addressOffset>0x1F</addressOffset>
+          <access>read-only</access>
+          <readAction>clear</readAction>
+          <fields>
+            <field>
+              <dim>8</dim>
+              <dimIncrement>1</dimIncrement>
+              <name>SPRITE%s</name>
+              <description>Sprite %s collided with the background</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Collision</name>
+                <enumeratedValue><name>Clear</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Collided</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>EXTCOL</name>
+          <description>Border color (bits 3:0; upper bits read as 1)</description>
+          <addressOffset>0x20</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Border color</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues>
+                <name>Color</name>
+                <enumeratedValue><name>Black</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>White</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Red</name><value>2</value></enumeratedValue>
+                <enumeratedValue><name>Cyan</name><value>3</value></enumeratedValue>
+                <enumeratedValue><name>Purple</name><value>4</value></enumeratedValue>
+                <enumeratedValue><name>Green</name><value>5</value></enumeratedValue>
+                <enumeratedValue><name>Blue</name><value>6</value></enumeratedValue>
+                <enumeratedValue><name>Yellow</name><value>7</value></enumeratedValue>
+                <enumeratedValue><name>Orange</name><value>8</value></enumeratedValue>
+                <enumeratedValue><name>Brown</name><value>9</value></enumeratedValue>
+                <enumeratedValue><name>LightRed</name><value>10</value></enumeratedValue>
+                <enumeratedValue><name>DarkGray</name><value>11</value></enumeratedValue>
+                <enumeratedValue><name>MediumGray</name><value>12</value></enumeratedValue>
+                <enumeratedValue><name>LightGreen</name><value>13</value></enumeratedValue>
+                <enumeratedValue><name>LightBlue</name><value>14</value></enumeratedValue>
+                <enumeratedValue><name>LightGray</name><value>15</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>4</dim>
+          <dimIncrement>1</dimIncrement>
+          <name>BGCOL%s</name>
+          <description>Background color (bits 3:0)</description>
+          <addressOffset>0x21</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Background color</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues derivedFrom="EXTCOL.COLOR.Color"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPMC0</name>
+          <description>Sprite multicolor 0 (bits 3:0)</description>
+          <addressOffset>0x25</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Shared sprite multicolor 0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues derivedFrom="EXTCOL.COLOR.Color"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SPMC1</name>
+          <description>Sprite multicolor 1 (bits 3:0)</description>
+          <addressOffset>0x26</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Shared sprite multicolor 1</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues derivedFrom="EXTCOL.COLOR.Color"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <dim>8</dim>
+          <dimIncrement>1</dimIncrement>
+          <name>SP%sCOL</name>
+          <description>Sprite color (bits 3:0)</description>
+          <addressOffset>0x27</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Sprite color</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues derivedFrom="EXTCOL.COLOR.Color"/>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>SID</name>
+      <description>
+        SID sound interface (6581/8580) at 0xD400. Register image repeats every 0x20 bytes
+        through 0xD7FF. Voice and filter registers are write-only: reads return a decaying
+        copy of the last value written to any SID register, not register contents (not
+        modeled here). POTX/POTY digitize the RC discharge time of the paddle inputs
+        selected by CIA1.CIAPRA bits 6-7.
+      </description>
+      <baseAddress>0xD400</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x20</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <cluster>
+          <dim>3</dim>
+          <dimIncrement>0x7</dimIncrement>
+          <name>VOICE%s</name>
+          <description>Voice %s</description>
+          <addressOffset>0x00</addressOffset>
+          <register>
+            <name>FRELO</name>
+            <description>Oscillator frequency bits 7:0</description>
+            <addressOffset>0x0</addressOffset>
+            <access>write-only</access>
+            <fields>
+            <field>
+              <name>FREQUENCY</name>
+              <description>Oscillator frequency, low 8 bits</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+          <register>
+            <name>FREHI</name>
+            <description>Oscillator frequency bits 15:8</description>
+            <addressOffset>0x1</addressOffset>
+            <access>write-only</access>
+            <fields>
+            <field>
+              <name>FREQUENCY</name>
+              <description>Oscillator frequency, high 8 bits</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+          <register>
+            <name>PWLO</name>
+            <description>Pulse width bits 7:0</description>
+            <addressOffset>0x2</addressOffset>
+            <access>write-only</access>
+            <fields>
+            <field>
+              <name>PULSE_WAVEFORM_WIDTH</name>
+              <description>Pulse waveform width, low 8 bits</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+          <register>
+            <name>PWHI</name>
+            <description>Pulse width bits 11:8 (bits 4-7 unused)</description>
+            <addressOffset>0x3</addressOffset>
+            <access>write-only</access>
+            <fields>
+              <field>
+                <name>PULSE_WAVEFORM_WIDTH</name>
+                <description>Pulse width bits 11:8</description>
+                <bitOffset>0</bitOffset>
+                <bitWidth>4</bitWidth>
+              </field>
+            </fields>
+          </register>
+          <register>
+            <name>VCREG</name>
+            <description>Voice control</description>
+            <addressOffset>0x4</addressOffset>
+            <access>write-only</access>
+            <fields>
+            <field>
+              <name>GATE</name>
+              <description>Envelope gate: 0 starts release, 1 starts attack-decay-sustain</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Start</name>
+                <enumeratedValue><name>StartR</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>StartADS</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SYNC</name>
+              <description>Hard-sync oscillator with the preceding voice</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>RING</name>
+              <description>Ring modulation with the preceding voice (triangle output)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>TEST</name>
+              <description>Reset and hold the oscillator (Disabled = held)</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Test</name>
+                <enumeratedValue><name>Enabled</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Disabled</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TRIANGLE</name>
+              <description>Triangle waveform</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>SAWTOOTH</name>
+              <description>Sawtooth waveform</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>PULSE</name>
+              <description>Pulse waveform</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>NOISE</name>
+              <description>Noise waveform</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+          </register>
+          <register>
+            <name>ATDCY</name>
+            <description>Envelope attack/decay</description>
+            <addressOffset>0x5</addressOffset>
+            <access>write-only</access>
+            <fields>
+              <field>
+                <name>DECAY</name>
+                <description>Decay rate</description>
+                <bitOffset>0</bitOffset>
+                <bitWidth>4</bitWidth>
+              </field>
+              <field>
+                <name>ATTACK</name>
+                <description>Attack rate</description>
+                <bitOffset>4</bitOffset>
+                <bitWidth>4</bitWidth>
+              </field>
+            </fields>
+          </register>
+          <register>
+            <name>SUREL</name>
+            <description>Envelope sustain/release</description>
+            <addressOffset>0x6</addressOffset>
+            <access>write-only</access>
+            <fields>
+              <field>
+                <name>RELEASE</name>
+                <description>Release rate</description>
+                <bitOffset>0</bitOffset>
+                <bitWidth>4</bitWidth>
+              </field>
+              <field>
+                <name>SUSTAIN</name>
+                <description>Sustain level</description>
+                <bitOffset>4</bitOffset>
+                <bitWidth>4</bitWidth>
+              </field>
+            </fields>
+          </register>
+        </cluster>
+        <register>
+          <name>CUTLO</name>
+          <description>Filter cutoff bits 2:0 (bits 3-7 unused)</description>
+          <addressOffset>0x15</addressOffset>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>FILTER_CUTOFF_FREQ</name>
+              <description>Filter cutoff bits 2:0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>3</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CUTHI</name>
+          <description>Filter cutoff bits 10:3</description>
+          <addressOffset>0x16</addressOffset>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>FILTER_CUTOFF_FREQ</name>
+              <description>Filter cutoff frequency, high 8 bits</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>RESON</name>
+          <description>Filter resonance and routing</description>
+          <addressOffset>0x17</addressOffset>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>FILT_1</name>
+              <description>Route voice 1 through the filter</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>FILT_2</name>
+              <description>Route voice 2 through the filter</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>FILT_3</name>
+              <description>Route voice 3 through the filter</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>FILT_EXT</name>
+              <description>Route external input through the filter</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>FILT_RES</name>
+              <description>Filter resonance (0-15)</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>SIGVOL</name>
+          <description>Filter mode and master volume</description>
+          <addressOffset>0x18</addressOffset>
+          <access>write-only</access>
+          <fields>
+            <field>
+              <name>VOL</name>
+              <description>Master volume (0-15)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+            <field>
+              <name>LOW_PASS</name>
+              <description>Low-pass filter output</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>BAND_PASS</name>
+              <description>Band-pass filter output</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>HIGH_PASS</name>
+              <description>High-pass filter output</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field>
+              <name>VOICE3OFF</name>
+              <description>Voice 3 audio output (Disabled = disconnected)</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Voice3</name>
+                <enumeratedValue><name>Enabled</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Disabled</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>POTX</name>
+          <description>Paddle X digitized position (updated every 512 cycles)</description>
+          <addressOffset>0x19</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>POTY</name>
+          <description>Paddle Y digitized position</description>
+          <addressOffset>0x1A</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>RANDOM</name>
+          <description>Voice 3 oscillator output (usable as entropy with noise waveform)</description>
+          <addressOffset>0x1B</addressOffset>
+          <access>read-only</access>
+        </register>
+        <register>
+          <name>ENV3</name>
+          <description>Voice 3 envelope output</description>
+          <addressOffset>0x1C</addressOffset>
+          <access>read-only</access>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>CIA1</name>
+      <description>
+        MOS 6526 CIA 1 at 0xDC00 (image repeats every 0x10 bytes through 0xDCFF):
+        keyboard matrix, joysticks, paddle select, Datassette read (FLAG1), timers.
+        IRQ output drives the 6510 IRQ line. TOD pin receives mains-derived 50/60 Hz.
+        SP1/CNT1 are available on the user port.
+      </description>
+      <baseAddress>0xDC00</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>CIAPRA</name>
+          <description>Port A. Doubles as keyboard-matrix column drive (outputs, active low) and joystick port 2 (bits 0-4, active low). Bits 6-7 select which control port's paddles reach SID POTX/POTY.</description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>UP</name>
+              <description>Joystick 2 up (also keyboard column 0). Active low.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Pushed</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Released</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>DOWN</name>
+              <description>Joystick 2 down (also keyboard column 1). Active low.</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRA.UP.Direction"/>
+            </field>
+            <field>
+              <name>LEFT</name>
+              <description>Joystick 2 left (also keyboard column 2). Active low.</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRA.UP.Direction"/>
+            </field>
+            <field>
+              <name>RIGHT</name>
+              <description>Joystick 2 right (also keyboard column 3). Active low.</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRA.UP.Direction"/>
+            </field>
+            <field>
+              <name>FIRE</name>
+              <description>Joystick 2 fire (also keyboard column 4). Active low.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Button</name>
+                <enumeratedValue><name>Pressed</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Released</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PA5</name>
+              <description>Keyboard column 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PADDLES</name>
+              <description>Selects which control port's paddles are digitized by SID POTX/POTY: 1 = port 1, 2 = port 2</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>2</bitWidth>
+              <enumeratedValues>
+                <name>Paddles</name>
+                <enumeratedValue><name>Port1</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Port2</name><value>2</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIAPRB</name>
+          <description>Port B. Doubles as keyboard-matrix row sense (inputs, active low) and joystick port 1 (bits 0-4, active low; the fire line also triggers the light pen). PB6/PB7 can output timer A/B underflow.</description>
+          <addressOffset>0x1</addressOffset>
+          <fields>
+            <field>
+              <name>UP</name>
+              <description>Joystick 1 up (also keyboard row 0). Active low.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Pushed</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Released</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>DOWN</name>
+              <description>Joystick 1 down (also keyboard row 1). Active low.</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRB.UP.Direction"/>
+            </field>
+            <field>
+              <name>LEFT</name>
+              <description>Joystick 1 left (also keyboard row 2). Active low.</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRB.UP.Direction"/>
+            </field>
+            <field>
+              <name>RIGHT</name>
+              <description>Joystick 1 right (also keyboard row 3). Active low.</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAPRB.UP.Direction"/>
+            </field>
+            <field>
+              <name>FIRE</name>
+              <description>Joystick 1 fire, also the light pen trigger (also keyboard row 4). Active low.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Button</name>
+                <enumeratedValue><name>Pressed</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Released</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PB5</name>
+              <description>Keyboard row 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PB6</name>
+              <description>Timer A underflow output when CIACRA.SELECT_TIMER_OUTPUT is set; otherwise general I/O</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PB7</name>
+              <description>Timer B underflow output when CIACRB.SELECT_TIMER_OUTPUT is set; otherwise general I/O</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIDDRA</name>
+          <description>Port A data direction (1 = output)</description>
+          <addressOffset>0x2</addressOffset>
+          <fields>
+            <field>
+              <name>LINE0</name>
+              <description>Direction of Data Port A bit 0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>LINE1</name>
+              <description>Direction of Data Port A bit 1</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE2</name>
+              <description>Direction of Data Port A bit 2</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE3</name>
+              <description>Direction of Data Port A bit 3</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE4</name>
+              <description>Direction of Data Port A bit 4</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE5</name>
+              <description>Direction of Data Port A bit 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE6</name>
+              <description>Direction of Data Port A bit 6</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE7</name>
+              <description>Direction of Data Port A bit 7</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRA.LINE0.Direction"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIDDRB</name>
+          <description>Port B data direction (1 = output)</description>
+          <addressOffset>0x3</addressOffset>
+          <fields>
+            <field>
+              <name>LINE0</name>
+              <description>Direction of Data Port B bit 0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>LINE1</name>
+              <description>Direction of Data Port B bit 1</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE2</name>
+              <description>Direction of Data Port B bit 2</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE3</name>
+              <description>Direction of Data Port B bit 3</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE4</name>
+              <description>Direction of Data Port B bit 4</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE5</name>
+              <description>Direction of Data Port B bit 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE6</name>
+              <description>Direction of Data Port B bit 6</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE7</name>
+              <description>Direction of Data Port B bit 7</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIDDRB.LINE0.Direction"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TIMALO</name>
+          <description>Timer A bits 7:0. Read: current count. Write: latch (reload value). HI/LO reads are not latched together, so a 16-bit read can tear across a decrement: read HI, LO, re-read HI and retry on change, or stop the timer.</description>
+          <addressOffset>0x4</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer A, low 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TIMAHI</name>
+          <description>Timer A bits 15:8. Read: current count. Write: latch; if the timer is stopped, writing also loads the counter.</description>
+          <addressOffset>0x5</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer A, high 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TIMBLO</name>
+          <description>Timer B bits 7:0 (as TALO)</description>
+          <addressOffset>0x6</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer B, low 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TIMBHI</name>
+          <description>Timer B bits 15:8 (as TAHI)</description>
+          <addressOffset>0x7</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer B, high 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TODTEN</name>
+          <description>TOD tenths of seconds, BCD. SIDE-EFFECT: reading releases the latch set by reading TODHRS; writing (in clock mode) restarts the clock; CIACRB.TOD_WRITE_MODE selects whether writes set the clock or the alarm.</description>
+          <addressOffset>0x8</addressOffset>
+          <fields>
+            <field>
+              <name>TENTHS</name>
+              <description>Tenths, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TODSEC</name>
+          <description>TOD seconds, BCD. SIDE-EFFECT: writes set the clock or the alarm per CIACRB.TOD_WRITE_MODE; the read value is frozen while the TODHRS/TODTEN latch is held.</description>
+          <addressOffset>0x9</addressOffset>
+          <fields>
+            <field>
+              <name>SECONDS</name>
+              <description>Seconds 00-59, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>7</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TODMIN</name>
+          <description>TOD minutes, BCD. SIDE-EFFECT: writes set the clock or the alarm per CIACRB.TOD_WRITE_MODE; the read value is frozen while the TODHRS/TODTEN latch is held.</description>
+          <addressOffset>0xA</addressOffset>
+          <fields>
+            <field>
+              <name>MINUTES</name>
+              <description>Minutes 00-59, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>7</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TODHRS</name>
+          <description>TOD hours, BCD, 12-hour with PM flag. SIDE-EFFECT: reading latches all four TOD registers until TODTEN is read; writing (in clock mode) stops the clock until TODTEN is written; CIACRB.TOD_WRITE_MODE selects whether writes set the clock or the alarm.</description>
+          <addressOffset>0xB</addressOffset>
+          <fields>
+            <field>
+              <name>HOURS</name>
+              <description>Hours 01-12, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>5</bitWidth>
+            </field>
+            <field>
+              <name>PM</name>
+              <description>1 = PM</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Meridiem</name>
+                <enumeratedValue><name>Am</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Pm</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIASDR</name>
+          <description>Serial shift register on SP pin, clocked by CNT; direction set by CRA.SPMODE. Output rate is timer A underflow / 2.</description>
+          <addressOffset>0xC</addressOffset>
+          <fields>
+            <field>
+              <name>DATA</name>
+              <description>Serial shift-register byte</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIAICR_R</name>
+          <description>Interrupt data (read-only view of 0xDC0D, asserts IRQ): which sources have fired. Bit 7 (IR) reads Latched if any enabled source is pending. SIDE-EFFECT: reading clears all flags and releases the line, so capture everything from one read. Set the mask via CIAICR_W.</description>
+          <addressOffset>0xD</addressOffset>
+          <access>read-only</access>
+          <readAction>clear</readAction>
+          <fields>
+            <field><name>TIMER_A</name><description>Timer A underflow</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Latch</name>
+                <enumeratedValue><name>Inactive</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Latched</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field><name>TIMER_B</name><description>Timer B underflow</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>ALARM</name><description>TOD alarm match</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>SERIAL</name><description>Serial register full/empty</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>FLAG</name><description>FLAG pin negative edge (CIA1: Datassette read)</description><bitOffset>4</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>IRQ</name><description>Any enabled source latched (this read also clears all flags)</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CIAICR_R.TIMER_A.Latch"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIAICR_W</name>
+          <description>Interrupt mask (write-only alternate view of 0xDC0D). Bit 7 (MODE) is the set/clear selector: with MODE enabled the source bits you enable are turned on, with MODE disabled they are turned off; bits left 0 are unchanged. Read status via CIAICR_R. SIDE-EFFECT: this write changes which interrupts are enabled.</description>
+          <addressOffset>0xD</addressOffset>
+          <alternateRegister>CIAICR_R</alternateRegister>
+          <access>write-only</access>
+          <fields>
+            <field><name>TIMER_A</name><description>Enable Timer A interrupt</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>TIMER_B</name><description>Enable Timer B interrupt</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>ALARM</name><description>Enable TOD alarm interrupt</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>SERIAL</name><description>Enable serial interrupt</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>FLAG</name><description>Enable FLAG interrupt</description><bitOffset>4</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>MODE</name><description>Set/clear selector: enabled = the source bits you set are turned on, disabled = turned off; bits left 0 are unchanged. SIDE-EFFECT: (un)masking an interrupt takes effect at once.</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIACRA</name>
+          <description>Control register A</description>
+          <addressOffset>0xE</addressOffset>
+          <fields>
+            <field>
+              <name>START_TIMER</name>
+              <description>Start/stop timer A. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>StartTimer</name>
+                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SELECT_TIMER_OUTPUT</name>
+              <description>Route timer A underflow onto PB6</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SelectTimerOutput</name>
+                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PORT_OUTPUT_MODE</name>
+              <description>PB6 output waveform on timer A underflow</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>PortOutputMode</name>
+                <enumeratedValue><name>PulseBit6</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>ToggleBit6</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_RUN_MODE</name>
+              <description>Timer A reload behavior after underflow</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerRunMode</name>
+                <enumeratedValue><name>Continuous</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OneShot</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>FORCE_LATCHED_LOAD</name>
+              <description>Force-load timer A from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>ForceLatchedLoad</name>
+                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_INPUT_MODE</name>
+              <description>What timer A counts</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerInputMode</name>
+                <enumeratedValue><name>CpuCycles</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>UserPortCnt</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SERIAL_PORT</name>
+              <description>Serial-port shift-register direction</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SerialPort</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TOD_CLOCK_FREQ</name>
+              <description>TOD clock input frequency</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TodClockFreq</name>
+                <enumeratedValue><name>Hz60</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Hz50</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CIACRB</name>
+          <description>Control register B</description>
+          <addressOffset>0xF</addressOffset>
+          <fields>
+            <field>
+              <name>START_TIMER</name>
+              <description>Start/stop timer B. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>StartTimer</name>
+                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SELECT_TIMER_OUTPUT</name>
+              <description>Route timer B underflow onto PB7</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SelectTimerOutput</name>
+                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PORT_OUTPUT_MODE</name>
+              <description>PB7 output waveform on timer B underflow</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>PortOutputMode</name>
+                <enumeratedValue><name>PulseBit7</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>ToggleBit7</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_RUN_MODE</name>
+              <description>Timer B reload behavior after underflow</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerRunMode</name>
+                <enumeratedValue><name>Continuous</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OneShot</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>FORCE_LATCHED_LOAD</name>
+              <description>Force-load timer B from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>ForceLatchedLoad</name>
+                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_INPUT_MODE</name>
+              <description>What timer B counts</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>2</bitWidth>
+              <enumeratedValues>
+                <name>TimerInputMode</name>
+                <enumeratedValue><name>CpuCycles</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>UserPortCnt</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>TaUnderflow</name><value>2</value></enumeratedValue>
+                <enumeratedValue><name>TaUnderflowWhileCntHigh</name><value>3</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TOD_WRITE_MODE</name>
+              <description>Selects what TOD register writes set: clock or alarm</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TodWriteMode</name>
+                <enumeratedValue><name>Clock</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Alarm</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>CIA2</name>
+      <description>
+        MOS 6526 CIA 2 at 0xDD00 (image repeats every 0x10 bytes through 0xDDFF):
+        VIC bank select, IEC serial bus, user port, RS-232. IRQ output drives the 6510
+        NMI line (shared with the RESTORE key). FLAG2 is user port pin B (RS-232 RXD).
+        SP2/CNT2 are available on the user port. Defined in full rather than derived
+        from CIA1 so port and FLAG descriptions are correct; register layout is
+        identical to CIA1.
+      </description>
+      <baseAddress>0xDD00</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x10</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <name>CI2PRA</name>
+          <description>Port A: VIC bank, IEC bus, RS-232 TXD. IEC outputs pass through inverting open-collector drivers: writing 1 pulls the bus line low. Inputs read the bus level directly.</description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>VICBANK</name>
+              <description>VIC-II 16 KiB video bank: Bank0 = 0x0000-0x3FFF, Bank1 = 0x4000-0x7FFF, Bank2 = 0x8000-0xBFFF, Bank3 = 0xC000-0xFFFF. The raw CIA2 bits are inverted (Bank0 = 0b11 down to Bank3 = 0b00); the enum hides that so you pick a bank by number.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>2</bitWidth>
+              <enumeratedValues>
+                <name>Bank</name>
+                <enumeratedValue><name>Bank3</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Bank2</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Bank1</name><value>2</value></enumeratedValue>
+                <enumeratedValue><name>Bank0</name><value>3</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TXD</name>
+              <description>RS-232 TXD (user port pin M)</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>ATN_OUT</name>
+              <description>IEC ATN out (inverted onto bus)</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CLK_OUT</name>
+              <description>IEC CLK out (inverted onto bus)</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>DATA_OUT</name>
+              <description>IEC DATA out (inverted onto bus)</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CLK_IN</name>
+              <description>IEC CLK in</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+            <field>
+              <name>DATA_IN</name>
+              <description>IEC DATA in</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <access>read-only</access>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2PRB</name>
+          <description>Port B: user port PB0-PB7 (pins C-L). KERNAL RS-232 assigns RXD to PB0 (paralleled with FLAG2) and handshake lines to PB1-PB7. General-purpose GPIO when RS-232 is unused.</description>
+          <addressOffset>0x1</addressOffset>
+          <fields>
+            <field>
+              <name>SIN_PIN_C</name>
+              <description>RS-232 data input (SIN) / user port pin C</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>RTS_PIN_D</name>
+              <description>RS-232 request to send (RTS) / user port pin D</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>DTR_PIN_E</name>
+              <description>RS-232 data terminal ready (DTR) / user port pin E</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>RI_PIN_F</name>
+              <description>RS-232 ring indicator (RI) / user port pin F</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>DCD_PIN_H</name>
+              <description>RS-232 carrier detect (DCD) / user port pin H</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>PIN_J</name>
+              <description>User port pin J</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>CTS_PIN_K</name>
+              <description>RS-232 clear to send (CTS) / user port pin K; also Timer A toggle/pulse output</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+            <field>
+              <name>DSR_PIN_L</name>
+              <description>RS-232 data set ready (DSR) / user port pin L; also Timer B toggle/pulse output</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C2DDRA</name>
+          <description>Port A data direction (1 = output). KERNAL sets 0x3F.</description>
+          <addressOffset>0x2</addressOffset>
+          <fields>
+            <field>
+              <name>LINE0</name>
+              <description>Direction of Data Port A bit 0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>LINE1</name>
+              <description>Direction of Data Port A bit 1</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE2</name>
+              <description>Direction of Data Port A bit 2</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE3</name>
+              <description>Direction of Data Port A bit 3</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE4</name>
+              <description>Direction of Data Port A bit 4</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE5</name>
+              <description>Direction of Data Port A bit 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE6</name>
+              <description>Direction of Data Port A bit 6</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE7</name>
+              <description>Direction of Data Port A bit 7</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRA.LINE0.Direction"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>C2DDRB</name>
+          <description>Port B data direction (1 = output)</description>
+          <addressOffset>0x3</addressOffset>
+          <fields>
+            <field>
+              <name>LINE0</name>
+              <description>Direction of Data Port B bit 0</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Direction</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>LINE1</name>
+              <description>Direction of Data Port B bit 1</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE2</name>
+              <description>Direction of Data Port B bit 2</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE3</name>
+              <description>Direction of Data Port B bit 3</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE4</name>
+              <description>Direction of Data Port B bit 4</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE5</name>
+              <description>Direction of Data Port B bit 5</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE6</name>
+              <description>Direction of Data Port B bit 6</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+            <field>
+              <name>LINE7</name>
+              <description>Direction of Data Port B bit 7</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="C2DDRB.LINE0.Direction"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TI2ALO</name>
+          <description>Timer A bits 7:0. Read: current count. Write: latch (reload value). HI/LO reads are not latched together, so a 16-bit read can tear across a decrement: read HI, LO, re-read HI and retry on change, or stop the timer.</description>
+          <addressOffset>0x4</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer A, low 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TI2AHI</name>
+          <description>Timer A bits 15:8. Read: current count. Write: latch; if the timer is stopped, writing also loads the counter.</description>
+          <addressOffset>0x5</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer A, high 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TI2BLO</name>
+          <description>Timer B bits 7:0 (as TALO)</description>
+          <addressOffset>0x6</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer B, low 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TI2BHI</name>
+          <description>Timer B bits 15:8 (as TAHI)</description>
+          <addressOffset>0x7</addressOffset>
+          <fields>
+            <field>
+              <name>TIMER</name>
+              <description>Timer B, high 8 bits (read: counter; write: latch)</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TO2TEN</name>
+          <description>TOD tenths of seconds, BCD. SIDE-EFFECT: reading releases the latch set by reading TO2HRS; writing (in clock mode) restarts the clock; CI2CRB.TOD_WRITE_MODE selects clock vs alarm. Same behavior as CIA1.TODTEN.</description>
+          <addressOffset>0x8</addressOffset>
+          <fields>
+            <field>
+              <name>TENTHS</name>
+              <description>Tenths, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TO2SEC</name>
+          <description>TOD seconds, BCD. SIDE-EFFECT: writes set the clock or the alarm per CI2CRB.TOD_WRITE_MODE; the read value is frozen while the TO2HRS/TO2TEN latch is held.</description>
+          <addressOffset>0x9</addressOffset>
+          <fields>
+            <field>
+              <name>SECONDS</name>
+              <description>Seconds 00-59, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>7</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TO2MIN</name>
+          <description>TOD minutes, BCD. SIDE-EFFECT: writes set the clock or the alarm per CI2CRB.TOD_WRITE_MODE; the read value is frozen while the TO2HRS/TO2TEN latch is held.</description>
+          <addressOffset>0xA</addressOffset>
+          <fields>
+            <field>
+              <name>MINUTES</name>
+              <description>Minutes 00-59, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>7</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>TO2HRS</name>
+          <description>TOD hours, BCD, 12-hour with PM flag. SIDE-EFFECT: reading latches all four CIA2 TOD registers until TO2TEN is read; writing (in clock mode) stops the clock until TO2TEN is written; CI2CRB.TOD_WRITE_MODE selects clock vs alarm. Same behavior as CIA1.TODHRS.</description>
+          <addressOffset>0xB</addressOffset>
+          <fields>
+            <field>
+              <name>HOURS</name>
+              <description>Hours 01-12, BCD</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>5</bitWidth>
+            </field>
+            <field>
+              <name>PM</name>
+              <description>1 = PM</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Meridiem</name>
+                <enumeratedValue><name>Am</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Pm</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2SDR</name>
+          <description>Serial shift register on SP2, clocked by CNT2; direction set by CRA.SPMODE</description>
+          <addressOffset>0xC</addressOffset>
+          <fields>
+            <field>
+              <name>DATA</name>
+              <description>Serial shift-register byte</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>8</bitWidth>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2ICR_R</name>
+          <description>Interrupt data (read-only view of 0xDD0D, asserts NMI): which sources have fired. Bit 7 (IR) reads Latched if any enabled source is pending. SIDE-EFFECT: reading clears all flags and releases the line, so capture everything from one read. Set the mask via CI2ICR_W.</description>
+          <addressOffset>0xD</addressOffset>
+          <access>read-only</access>
+          <readAction>clear</readAction>
+          <fields>
+            <field><name>TIMER_A</name><description>Timer A underflow</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>Latch</name>
+                <enumeratedValue><name>Inactive</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Latched</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field><name>TIMER_B</name><description>Timer B underflow</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CI2ICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>ALARM</name><description>TOD alarm match</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CI2ICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>SERIAL</name><description>Serial register full/empty</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CI2ICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>FLAG</name><description>FLAG2 negative edge (user port pin B / RS-232 RXD start bit)</description><bitOffset>4</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CI2ICR_R.TIMER_A.Latch"/>
+            </field>
+            <field><name>IRQ</name><description>Any enabled source latched (this read also clears all flags)</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="CI2ICR_R.TIMER_A.Latch"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2ICR_W</name>
+          <description>Interrupt mask (write-only alternate view of 0xDD0D). Bit 7 (MODE) is the set/clear selector: with MODE enabled the source bits you enable are turned on, with MODE disabled they are turned off; bits left 0 are unchanged. Read status via CI2ICR_R. SIDE-EFFECT: this write changes which interrupts are enabled.</description>
+          <addressOffset>0xD</addressOffset>
+          <alternateRegister>CI2ICR_R</alternateRegister>
+          <access>write-only</access>
+          <fields>
+            <field><name>TIMER_A</name><description>Enable Timer A interrupt</description><bitOffset>0</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>TIMER_B</name><description>Enable Timer B interrupt</description><bitOffset>1</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>ALARM</name><description>Enable TOD alarm interrupt</description><bitOffset>2</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>SERIAL</name><description>Enable serial interrupt</description><bitOffset>3</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>FLAG</name><description>Enable FLAG interrupt</description><bitOffset>4</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+            <field><name>MODE</name><description>Set/clear selector: enabled = the source bits you set are turned on, disabled = turned off; bits left 0 are unchanged. SIDE-EFFECT: (un)masking an interrupt takes effect at once.</description><bitOffset>7</bitOffset><bitWidth>1</bitWidth>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2CRA</name>
+          <description>Control register A (same layout as CIA1.CRA; the timer-output bits act on this CIA's PB6)</description>
+          <addressOffset>0xE</addressOffset>
+          <fields>
+            <field>
+              <name>START_TIMER</name>
+              <description>Start/stop timer A. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>StartTimer</name>
+                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SELECT_TIMER_OUTPUT</name>
+              <description>Route timer A underflow onto PB6</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SelectTimerOutput</name>
+                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PORT_OUTPUT_MODE</name>
+              <description>PB6 output waveform on timer A underflow</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>PortOutputMode</name>
+                <enumeratedValue><name>PulseBit6</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>ToggleBit6</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_RUN_MODE</name>
+              <description>Timer A reload behavior after underflow</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerRunMode</name>
+                <enumeratedValue><name>Continuous</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OneShot</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>FORCE_LATCHED_LOAD</name>
+              <description>Force-load timer A from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>ForceLatchedLoad</name>
+                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_INPUT_MODE</name>
+              <description>What timer A counts</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerInputMode</name>
+                <enumeratedValue><name>CpuCycles</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>UserPortCnt</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SERIAL_PORT</name>
+              <description>Serial-port shift-register direction</description>
+              <bitOffset>6</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SerialPort</name>
+                <enumeratedValue><name>Input</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Output</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TOD_CLOCK_FREQ</name>
+              <description>TOD clock input frequency</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TodClockFreq</name>
+                <enumeratedValue><name>Hz60</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Hz50</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>CI2CRB</name>
+          <description>Control register B (same layout as CIA1.CRB; the timer-output bits act on this CIA's PB7)</description>
+          <addressOffset>0xF</addressOffset>
+          <fields>
+            <field>
+              <name>START_TIMER</name>
+              <description>Start/stop timer B. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>StartTimer</name>
+                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>SELECT_TIMER_OUTPUT</name>
+              <description>Route timer B underflow onto PB7</description>
+              <bitOffset>1</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>SelectTimerOutput</name>
+                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>PORT_OUTPUT_MODE</name>
+              <description>PB7 output waveform on timer B underflow</description>
+              <bitOffset>2</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>PortOutputMode</name>
+                <enumeratedValue><name>PulseBit7</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>ToggleBit7</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_RUN_MODE</name>
+              <description>Timer B reload behavior after underflow</description>
+              <bitOffset>3</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TimerRunMode</name>
+                <enumeratedValue><name>Continuous</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OneShot</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>FORCE_LATCHED_LOAD</name>
+              <description>Force-load timer B from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <bitOffset>4</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>ForceLatchedLoad</name>
+                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TIMER_INPUT_MODE</name>
+              <description>What timer B counts</description>
+              <bitOffset>5</bitOffset>
+              <bitWidth>2</bitWidth>
+              <enumeratedValues>
+                <name>TimerInputMode</name>
+                <enumeratedValue><name>CpuCycles</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>UserPortCnt</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>TaUnderflow</name><value>2</value></enumeratedValue>
+                <enumeratedValue><name>TaUnderflowWhileCntHigh</name><value>3</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+            <field>
+              <name>TOD_WRITE_MODE</name>
+              <description>Selects what TOD register writes set: clock or alarm</description>
+              <bitOffset>7</bitOffset>
+              <bitWidth>1</bitWidth>
+              <enumeratedValues>
+                <name>TodWriteMode</name>
+                <enumeratedValue><name>Clock</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Alarm</name><value>1</value></enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>COLORRAM</name>
+      <description>
+        1024 nybbles of static color RAM at 0xD800-0xDBFF, always visible when I/O is
+        banked in, independent of the VIC bank. Only bits 3:0 are stored; bits 7:4 read
+        as whatever the VIC last placed on its data bus (treat reads as 4-bit). The first
+        1000 (0xD800-0xDBE7) back the 40x25 text/bitmap display; the remaining 24
+        (0xDBE8-0xDBFF) are unused by the VIC but are real 4-bit cells, usable as scratch.
+      </description>
+      <baseAddress>0xD800</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x400</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <dim>1024</dim>
+          <dimIncrement>1</dimIncrement>
+          <name>CRAM%s</name>
+          <description>Color cell (bits 3:0)</description>
+          <addressOffset>0x0</addressOffset>
+          <fields>
+            <field>
+              <name>COLOR</name>
+              <description>Color of this cell</description>
+              <bitOffset>0</bitOffset>
+              <bitWidth>4</bitWidth>
+              <enumeratedValues derivedFrom="VIC.EXTCOL.COLOR.Color"/>
+            </field>
+          </fields>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>IO1</name>
+      <description>
+        Expansion (cartridge) port chip-select window: the PLA asserts /IO1 for any
+        access in 0xDE00-0xDEFF. No on-board device responds; contents are defined by
+        the inserted cartridge. With nothing connected, reads return open bus (a
+        decaying copy of the last byte on the data bus) and writes have no effect.
+      </description>
+      <baseAddress>0xDE00</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <dim>256</dim>
+          <dimIncrement>1</dimIncrement>
+          <name>BYTE%s</name>
+          <description>Cartridge-defined</description>
+          <addressOffset>0x0</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+    <peripheral>
+      <name>IO2</name>
+      <description>
+        Expansion (cartridge) port chip-select window: the PLA asserts /IO2 for any
+        access in 0xDF00-0xDFFF. Same behavior as IO1; commonly used by REU, disk
+        speeders and other cartridges.
+      </description>
+      <baseAddress>0xDF00</baseAddress>
+      <addressBlock>
+        <offset>0x0</offset>
+        <size>0x100</size>
+        <usage>registers</usage>
+      </addressBlock>
+      <registers>
+        <register>
+          <dim>256</dim>
+          <dimIncrement>1</dimIncrement>
+          <name>BYTE%s</name>
+          <description>Cartridge-defined</description>
+          <addressOffset>0x0</addressOffset>
+        </register>
+      </registers>
+    </peripheral>
+
+  </peripherals>
+</device>

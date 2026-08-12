@@ -1,0 +1,39 @@
+[package]
+name = "c64_pac"
+version = "0.1.0"
+edition = "2024"
+description = "Typed, zero-cost (zero runtime overhead) peripheral access for the Commodore 64's memory-mapped I/O (VIC-II, SID, CIA1/2, color RAM, CPU port), generated from a CMSIS-SVD description with svd2rust."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["c64", "commodore", "6502", "pac", "svd2rust"]
+categories = ["no-std", "embedded", "hardware-support"]
+
+# Dual origin (see README): the generated Rust in src/ is MIT OR Apache-2.0; the
+# register data it is generated from (svd/c64.svd) is CC0-1.0 — public-domain
+# hardware facts.
+
+[dependencies]
+vcell = "0.1.3"
+critical-section = { version = "1", optional = true }
+
+[features]
+# svd2rust gates `Peripherals::take()` on this feature. Off by default: the crate
+# then compiles with NO critical-section dependency and exposes only the `unsafe`
+# `Peripherals::steal()`. Enable it to also get the safe `take()`, and provide a
+# `critical-section` implementation (a SEI/CLI shim on the 6510) in your binary.
+critical-section = ["dep:critical-section"]
+
+# These profiles apply ONLY when c64_pac is built as the root crate (a standalone
+# `cargo check`/`test`/`doc` for mos-c64-none). The mos-c64-none target requires
+# LTO: without it, building `core` via -Zbuild-std hits an LLVM legalize error
+# (`unable to legalize G_FPTOUI_SAT`). When c64_pac is a dependency, the consuming
+# binary's profiles apply instead and these are ignored.
+[profile.dev]
+opt-level = 2
+lto = "thin"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+panic = "abort"
+strip = true
