@@ -108,6 +108,20 @@ impl R {
     #[inline(always)]
     pub fn line7(&self) -> Line7R { Line7R::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("C2DDRA")
+         .field("line0", &self.line0())
+         .field("line1", &self.line1())
+         .field("line2", &self.line2())
+         .field("line3", &self.line3())
+         .field("line4", &self.line4())
+         .field("line5", &self.line5())
+         .field("line6", &self.line6())
+         .field("line7", &self.line7())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - Direction of Data Port A bit 0
     #[inline(always)]

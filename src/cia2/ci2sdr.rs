@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn data(&self) -> DataR { DataR::new(self.bits) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CI2SDR").field("data", &self.data()).finish()
+    }
+}
 impl W {
     /// Bits 0:7 - Serial shift-register byte
     #[inline(always)]

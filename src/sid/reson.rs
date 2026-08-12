@@ -12,6 +12,11 @@ pub use crate::vic::scroly::ScreenW as Filt3W;
 pub use crate::vic::scroly::ScreenW as FiltExtW;
 /// Field `FILT_RES` writer - Filter resonance (0-15)
 pub type FiltResW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+impl core::fmt::Debug for crate::generic::Reg<ResonSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bit 0 - Route voice 1 through the filter
     #[inline(always)]

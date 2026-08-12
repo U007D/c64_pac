@@ -45,6 +45,16 @@ impl R {
     #[inline(always)]
     pub fn light_pen(&self) -> LightPenR { LightPenR::new(((self.bits >> 3) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("IRQMASK")
+         .field("raster", &self.raster())
+         .field("sprite_bg_collision", &self.sprite_bg_collision())
+         .field("sprite_sprite_collision", &self.sprite_sprite_collision())
+         .field("light_pen", &self.light_pen())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - Enable raster interrupt
     #[inline(always)]

@@ -1,4 +1,5 @@
 #[repr(C)]
+#[derive(Debug)]
 /// Register block
 pub struct RegisterBlock {
     d6510: D6510,

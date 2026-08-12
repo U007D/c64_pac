@@ -71,6 +71,11 @@ impl R {
     #[inline(always)]
     pub fn irq(&self) -> IrqR { IrqR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for crate::generic::Reg<Ci2icrRSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 /// Interrupt data (read-only view of 0xDD0D, asserts NMI): which sources have
 /// fired. Bit 7 (IR) reads Latched if any enabled source is pending.
 /// SIDE-EFFECT: reading clears all flags and releases the line, so capture

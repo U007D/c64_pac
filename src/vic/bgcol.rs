@@ -13,6 +13,11 @@ impl R {
     #[inline(always)]
     pub fn color(&self) -> ColorR { ColorR::new(self.bits & 0x0f) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("BGCOL").field("color", &self.color()).finish()
+    }
+}
 impl W {
     /// Bits 0:3 - Background color
     #[inline(always)]

@@ -35,6 +35,11 @@ impl<'a, REG> Voice3offW<'a, REG> where REG: crate::Writable + crate::RegisterSp
     #[inline(always)]
     pub fn disabled(self) -> &'a mut crate::W<REG> { self.variant(Voice3::Disabled) }
 }
+impl core::fmt::Debug for crate::generic::Reg<SigvolSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:3 - Master volume (0-15)
     #[inline(always)]

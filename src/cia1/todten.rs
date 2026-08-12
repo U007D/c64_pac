@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn tenths(&self) -> TenthsR { TenthsR::new(self.bits & 0x0f) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("TODTEN").field("tenths", &self.tenths()).finish()
+    }
+}
 impl W {
     /// Bits 0:3 - Tenths, BCD
     #[inline(always)]

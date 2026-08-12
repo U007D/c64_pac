@@ -1,4 +1,5 @@
 #[repr(C)]
+#[derive(Debug)]
 /// Voice %s
 #[doc(alias = "VOICE")]
 pub struct Voice {

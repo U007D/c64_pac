@@ -75,6 +75,20 @@ impl R {
     #[inline(always)]
     pub fn dsr_pin_l(&self) -> DsrPinLR { DsrPinLR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CI2PRB")
+         .field("sin_pin_c", &self.sin_pin_c())
+         .field("rts_pin_d", &self.rts_pin_d())
+         .field("dtr_pin_e", &self.dtr_pin_e())
+         .field("ri_pin_f", &self.ri_pin_f())
+         .field("dcd_pin_h", &self.dcd_pin_h())
+         .field("pin_j", &self.pin_j())
+         .field("cts_pin_k", &self.cts_pin_k())
+         .field("dsr_pin_l", &self.dsr_pin_l())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - RS-232 data input (SIN) / user port pin C
     #[inline(always)]

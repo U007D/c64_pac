@@ -139,6 +139,19 @@ impl R {
     #[inline(always)]
     pub fn data_in(&self) -> DataInR { DataInR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CI2PRA")
+         .field("vicbank", &self.vicbank())
+         .field("txd", &self.txd())
+         .field("atn_out", &self.atn_out())
+         .field("clk_out", &self.clk_out())
+         .field("data_out", &self.data_out())
+         .field("clk_in", &self.clk_in())
+         .field("data_in", &self.data_in())
+         .finish()
+    }
+}
 impl W {
     /// Bits 0:1 - VIC-II 16 KiB video bank: Bank0 = 0x0000-0x3FFF, Bank1 =
     /// 0x4000-0x7FFF, Bank2 = 0x8000-0xBFFF, Bank3 = 0xC000-0xFFFF. The raw

@@ -33,6 +33,11 @@ pub use RasterW as SpriteBgCollisionW;
 pub use RasterW as SpriteSpriteCollisionW;
 /// Field `LIGHT_PEN` writer - Acknowledge light-pen interrupt
 pub use RasterW as LightPenW;
+impl core::fmt::Debug for crate::generic::Reg<VicirqWSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bit 0 - Acknowledge raster-compare interrupt
     #[inline(always)]

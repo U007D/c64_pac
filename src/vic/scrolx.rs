@@ -80,6 +80,16 @@ impl R {
     #[inline(always)]
     pub fn res(&self) -> ResR { ResR::new(((self.bits >> 5) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("SCROLX")
+         .field("xscroll", &self.xscroll())
+         .field("column_select", &self.column_select())
+         .field("multicolor_mode", &self.multicolor_mode())
+         .field("res", &self.res())
+         .finish()
+    }
+}
 impl W {
     /// Bits 0:2 - Horizontal fine scroll (0-7)
     #[inline(always)]

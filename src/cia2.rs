@@ -1,4 +1,5 @@
 #[repr(C)]
+#[derive(Debug)]
 /// Register block
 pub struct RegisterBlock {
     ci2pra: Ci2pra,

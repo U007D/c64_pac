@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn seconds(&self) -> SecondsR { SecondsR::new(self.bits & 0x7f) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("TO2SEC").field("seconds", &self.seconds()).finish()
+    }
+}
 impl W {
     /// Bits 0:6 - Seconds 00-59, BCD
     #[inline(always)]

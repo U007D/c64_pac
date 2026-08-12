@@ -3,6 +3,11 @@ pub type W = crate::W<RasterWSpec>;
 /// Field `RASTER_LINE` writer - Raster line at which a raster IRQ fires, low 8
 /// bits (bit 8 in SCROLY.RST8)
 pub type RasterLineW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+impl core::fmt::Debug for crate::generic::Reg<RasterWSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:7 - Raster line at which a raster IRQ fires, low 8 bits (bit 8 in
     /// SCROLY.RST8)

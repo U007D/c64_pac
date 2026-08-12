@@ -16,6 +16,11 @@ pub use crate::vic::scroly::ScreenW as FlagW;
 /// are turned on, disabled = turned off; bits left 0 are unchanged.
 /// SIDE-EFFECT: (un)masking an interrupt takes effect at once.
 pub use crate::vic::scroly::ScreenW as ModeW;
+impl core::fmt::Debug for crate::generic::Reg<CiaicrWSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bit 0 - Enable Timer A interrupt
     #[inline(always)]

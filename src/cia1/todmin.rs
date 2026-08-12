@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn minutes(&self) -> MinutesR { MinutesR::new(self.bits & 0x7f) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("TODMIN").field("minutes", &self.minutes()).finish()
+    }
+}
 impl W {
     /// Bits 0:6 - Minutes 00-59, BCD
     #[inline(always)]

@@ -67,6 +67,17 @@ impl R {
     #[inline(always)]
     pub fn irq(&self) -> IrqR { IrqR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("VICIRQ_R")
+         .field("raster", &self.raster())
+         .field("sprite_bg_collision", &self.sprite_bg_collision())
+         .field("sprite_sprite_collision", &self.sprite_sprite_collision())
+         .field("light_pen", &self.light_pen())
+         .field("irq", &self.irq())
+         .finish()
+    }
+}
 /// Interrupt latch (read-only view of 0xD019): which VIC sources have fired.
 /// Bit 7 reads Latched while any enabled source is latched; bits 4-6 read as 1.
 /// Acknowledge via VICIRQ_W.

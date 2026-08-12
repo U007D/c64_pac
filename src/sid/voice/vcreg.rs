@@ -66,6 +66,11 @@ pub use crate::vic::scroly::ScreenW as SawtoothW;
 pub use crate::vic::scroly::ScreenW as PulseW;
 /// Field `NOISE` writer - Noise waveform
 pub use crate::vic::scroly::ScreenW as NoiseW;
+impl core::fmt::Debug for crate::generic::Reg<VcregSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bit 0 - Envelope gate: 0 starts release, 1 starts attack-decay-sustain
     #[inline(always)]

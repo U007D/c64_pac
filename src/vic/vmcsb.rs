@@ -19,6 +19,14 @@ impl R {
     #[inline(always)]
     pub fn video_matrix(&self) -> VideoMatrixR { VideoMatrixR::new((self.bits >> 4) & 0x0f) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("VMCSB")
+         .field("char_base", &self.char_base())
+         .field("video_matrix", &self.video_matrix())
+         .finish()
+    }
+}
 impl W {
     /// Bits 1:3 - Character/bitmap base address bits 13:11
     #[inline(always)]

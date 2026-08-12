@@ -4,6 +4,11 @@ pub type W = crate::W<SurelSpec>;
 pub type ReleaseW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
 /// Field `SUSTAIN` writer - Sustain level
 pub type SustainW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+impl core::fmt::Debug for crate::generic::Reg<SurelSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:3 - Release rate
     #[inline(always)]

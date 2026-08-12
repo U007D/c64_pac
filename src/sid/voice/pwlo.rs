@@ -2,6 +2,11 @@
 pub type W = crate::W<PwloSpec>;
 /// Field `PULSE_WAVEFORM_WIDTH` writer - Pulse waveform width, low 8 bits
 pub type PulseWaveformWidthW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+impl core::fmt::Debug for crate::generic::Reg<PwloSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:7 - Pulse waveform width, low 8 bits
     #[inline(always)]

@@ -60,6 +60,11 @@ impl R {
     #[inline(always)]
     pub fn pm(&self) -> PmR { PmR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("TODHRS").field("hours", &self.hours()).field("pm", &self.pm()).finish()
+    }
+}
 impl W {
     /// Bits 0:4 - Hours 01-12, BCD
     #[inline(always)]

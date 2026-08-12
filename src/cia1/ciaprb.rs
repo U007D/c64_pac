@@ -159,6 +159,20 @@ impl R {
     #[inline(always)]
     pub fn pb7(&self) -> Pb7R { Pb7R::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CIAPRB")
+         .field("up", &self.up())
+         .field("down", &self.down())
+         .field("left", &self.left())
+         .field("right", &self.right())
+         .field("fire", &self.fire())
+         .field("pb5", &self.pb5())
+         .field("pb6", &self.pb6())
+         .field("pb7", &self.pb7())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - Joystick 1 up (also keyboard row 0). Active low.
     #[inline(always)]

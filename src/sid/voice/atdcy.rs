@@ -4,6 +4,11 @@ pub type W = crate::W<AtdcySpec>;
 pub type DecayW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
 /// Field `ATTACK` writer - Attack rate
 pub type AttackW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+impl core::fmt::Debug for crate::generic::Reg<AtdcySpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:3 - Decay rate
     #[inline(always)]

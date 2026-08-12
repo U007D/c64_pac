@@ -59,6 +59,20 @@ impl R {
     #[inline(always)]
     pub fn sprite7(&self) -> SpriteR { SpriteR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("SPENA")
+         .field("sprite0", &self.sprite0())
+         .field("sprite1", &self.sprite1())
+         .field("sprite2", &self.sprite2())
+         .field("sprite3", &self.sprite3())
+         .field("sprite4", &self.sprite4())
+         .field("sprite5", &self.sprite5())
+         .field("sprite6", &self.sprite6())
+         .field("sprite7", &self.sprite7())
+         .finish()
+    }
+}
 impl W {
     /// Sprite (0-7) enabled
     ///

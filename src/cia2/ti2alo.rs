@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn timer(&self) -> TimerR { TimerR::new(self.bits) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("TI2ALO").field("timer", &self.timer()).finish()
+    }
+}
 impl W {
     /// Bits 0:7 - Timer A, low 8 bits (read: counter; write: latch)
     #[inline(always)]

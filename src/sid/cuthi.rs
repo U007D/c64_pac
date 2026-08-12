@@ -2,6 +2,11 @@
 pub type W = crate::W<CuthiSpec>;
 /// Field `FILTER_CUTOFF_FREQ` writer - Filter cutoff frequency, high 8 bits
 pub type FilterCutoffFreqW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+impl core::fmt::Debug for crate::generic::Reg<CuthiSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 impl W {
     /// Bits 0:7 - Filter cutoff frequency, high 8 bits
     #[inline(always)]

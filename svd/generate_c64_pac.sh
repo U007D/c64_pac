@@ -17,7 +17,9 @@ cd "$work"
 # lib.rs (form hardcodes that name) plus one file/dir per peripheral. As its own
 # crate root the PAC uses `crate::` correctly, so no path requalification is
 # needed (that was only for embedding it as an in-crate `mod`).
-svd2rust --target none -i "$svd"
+#
+# --impl-debug emits Debug for the register readers and RegisterBlocks.
+svd2rust --target none --impl-debug -i "$svd"
 form -i lib.rs -o src/
 
 # Crate-level attributes svd2rust doesn't emit (it targets a `mod`-style include):

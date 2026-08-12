@@ -85,6 +85,11 @@ impl R {
     #[inline(always)]
     pub fn sprite7(&self) -> SpriteR { SpriteR::new(((self.bits >> 7) & 1) != 0) }
 }
+impl core::fmt::Debug for crate::generic::Reg<SpspclSpec> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "(not readable)")
+    }
+}
 /// Sprite-sprite collision latch. SIDE-EFFECT: reading clears the latch - read
 /// once and keep the value.
 ///

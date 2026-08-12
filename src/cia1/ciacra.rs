@@ -423,6 +423,20 @@ impl R {
         TodClockFreqR::new(((self.bits >> 7) & 1) != 0)
     }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CIACRA")
+         .field("start_timer", &self.start_timer())
+         .field("select_timer_output", &self.select_timer_output())
+         .field("port_output_mode", &self.port_output_mode())
+         .field("timer_run_mode", &self.timer_run_mode())
+         .field("force_latched_load", &self.force_latched_load())
+         .field("timer_input_mode", &self.timer_input_mode())
+         .field("serial_port", &self.serial_port())
+         .field("tod_clock_freq", &self.tod_clock_freq())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - Start/stop timer A. SIDE-EFFECT: writing Started begins the
     /// count immediately.

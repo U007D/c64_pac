@@ -197,6 +197,19 @@ impl R {
     #[inline(always)]
     pub fn paddles(&self) -> PaddlesR { PaddlesR::new((self.bits >> 6) & 3) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("CIAPRA")
+         .field("up", &self.up())
+         .field("down", &self.down())
+         .field("left", &self.left())
+         .field("right", &self.right())
+         .field("fire", &self.fire())
+         .field("pa5", &self.pa5())
+         .field("paddles", &self.paddles())
+         .finish()
+    }
+}
 impl W {
     /// Bit 0 - Joystick 2 up (also keyboard column 0). Active low.
     #[inline(always)]

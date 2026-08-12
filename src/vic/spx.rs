@@ -11,6 +11,11 @@ impl R {
     #[inline(always)]
     pub fn position(&self) -> PositionR { PositionR::new(self.bits) }
 }
+impl core::fmt::Debug for R {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_struct("SPX").field("position", &self.position()).finish()
+    }
+}
 impl W {
     /// Bits 0:7 - Sprite X position, low 8 bits (bit 8 in MSIGX)
     #[inline(always)]
