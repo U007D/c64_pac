@@ -2,20 +2,44 @@
 pub type R = crate::R<VmcsbSpec>;
 /// Register `VMCSB` writer
 pub type W = crate::W<VmcsbSpec>;
-/// Field `CHAR_BASE` reader - Character/bitmap base address bits 13:11
+/// Field `CHAR_BASE` reader - Character/bitmap base address bits 13:11. Note:
+/// the value provided by the reference (Mapping the C64) for this field is a
+/// whole-register value. This field is offset from register bit 0 by 1 bit.
+/// Therefore the book value must be divided by 2 to supply the correct PAC
+/// value.
 pub type CharBaseR = crate::FieldReader;
-/// Field `CHAR_BASE` writer - Character/bitmap base address bits 13:11
+/// Field `CHAR_BASE` writer - Character/bitmap base address bits 13:11. Note:
+/// the value provided by the reference (Mapping the C64) for this field is a
+/// whole-register value. This field is offset from register bit 0 by 1 bit.
+/// Therefore the book value must be divided by 2 to supply the correct PAC
+/// value.
 pub type CharBaseW<'a, REG> = crate::FieldWriter<'a, REG, 3>;
-/// Field `VIDEO_MATRIX` reader - Video matrix (screen) base address bits 13:10
+/// Field `VIDEO_MATRIX` reader - Video matrix (screen) base address bits 13:10.
+/// Note: the value provided by the reference (Mapping the C64) for this field
+/// is a whole-register value. This field is offset from register bit 0 by 4
+/// bits. Therefore the book value must be divided by 16 to supply the correct
+/// PAC value.
 pub type VideoMatrixR = crate::FieldReader;
-/// Field `VIDEO_MATRIX` writer - Video matrix (screen) base address bits 13:10
+/// Field `VIDEO_MATRIX` writer - Video matrix (screen) base address bits 13:10.
+/// Note: the value provided by the reference (Mapping the C64) for this field
+/// is a whole-register value. This field is offset from register bit 0 by 4
+/// bits. Therefore the book value must be divided by 16 to supply the correct
+/// PAC value.
 pub type VideoMatrixW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
 impl R {
-    /// Bits 1:3 - Character/bitmap base address bits 13:11
+    /// Bits 1:3 - Character/bitmap base address bits 13:11. Note: the value
+    /// provided by the reference (Mapping the C64) for this field is a
+    /// whole-register value. This field is offset from register bit 0 by 1 bit.
+    /// Therefore the book value must be divided by 2 to supply the correct PAC
+    /// value.
     #[inline(always)]
     pub fn char_base(&self) -> CharBaseR { CharBaseR::new((self.bits >> 1) & 7) }
 
-    /// Bits 4:7 - Video matrix (screen) base address bits 13:10
+    /// Bits 4:7 - Video matrix (screen) base address bits 13:10. Note: the
+    /// value provided by the reference (Mapping the C64) for this field is a
+    /// whole-register value. This field is offset from register bit 0 by 4
+    /// bits. Therefore the book value must be divided by 16 to supply the
+    /// correct PAC value.
     #[inline(always)]
     pub fn video_matrix(&self) -> VideoMatrixR { VideoMatrixR::new((self.bits >> 4) & 0x0f) }
 }
@@ -28,11 +52,19 @@ impl core::fmt::Debug for R {
     }
 }
 impl W {
-    /// Bits 1:3 - Character/bitmap base address bits 13:11
+    /// Bits 1:3 - Character/bitmap base address bits 13:11. Note: the value
+    /// provided by the reference (Mapping the C64) for this field is a
+    /// whole-register value. This field is offset from register bit 0 by 1 bit.
+    /// Therefore the book value must be divided by 2 to supply the correct PAC
+    /// value.
     #[inline(always)]
     pub fn char_base(&mut self) -> CharBaseW<'_, VmcsbSpec> { CharBaseW::new(self, 1) }
 
-    /// Bits 4:7 - Video matrix (screen) base address bits 13:10
+    /// Bits 4:7 - Video matrix (screen) base address bits 13:10. Note: the
+    /// value provided by the reference (Mapping the C64) for this field is a
+    /// whole-register value. This field is offset from register bit 0 by 4
+    /// bits. Therefore the book value must be divided by 16 to supply the
+    /// correct PAC value.
     #[inline(always)]
     pub fn video_matrix(&mut self) -> VideoMatrixW<'_, VmcsbSpec> { VideoMatrixW::new(self, 4) }
 }

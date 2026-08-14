@@ -425,13 +425,13 @@
           <fields>
             <field>
               <name>CHAR_BASE</name>
-              <description>Character/bitmap base address bits 13:11</description>
+              <description>Character/bitmap base address bits 13:11. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 1 bit. Therefore the book value must be divided by 2 to supply the correct PAC value.</description>
               <bitOffset>1</bitOffset>
               <bitWidth>3</bitWidth>
             </field>
             <field>
               <name>VIDEO_MATRIX</name>
-              <description>Video matrix (screen) base address bits 13:10</description>
+              <description>Video matrix (screen) base address bits 13:10. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 4 bits. Therefore the book value must be divided by 16 to supply the correct PAC value.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>4</bitWidth>
             </field>
