@@ -5,7 +5,7 @@ pub type W = crate::W<CiasdrSpec>;
 /// Field `DATA` reader - Serial shift-register byte
 pub type DataR = crate::FieldReader;
 /// Field `DATA` writer - Serial shift-register byte
-pub type DataW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type DataW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Serial shift-register byte
     #[inline(always)]
@@ -33,7 +33,7 @@ impl crate::RegisterSpec for CiasdrSpec {
 impl crate::Readable for CiasdrSpec {}
 /// `write(|w| ..)` method takes [`ciasdr::W`](W) writer structure
 impl crate::Writable for CiasdrSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets CIASDR to value 0
 impl crate::Resettable for CiasdrSpec {}

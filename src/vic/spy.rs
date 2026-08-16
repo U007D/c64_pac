@@ -5,7 +5,7 @@ pub type W = crate::W<SpySpec>;
 /// Field `POSITION` reader - Sprite Y position
 pub type PositionR = crate::FieldReader;
 /// Field `POSITION` writer - Sprite Y position
-pub type PositionW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type PositionW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Sprite Y position
     #[inline(always)]
@@ -32,7 +32,7 @@ impl crate::RegisterSpec for SpySpec {
 impl crate::Readable for SpySpec {}
 /// `write(|w| ..)` method takes [`spy::W`](W) writer structure
 impl crate::Writable for SpySpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets SP%sY to value 0
 impl crate::Resettable for SpySpec {}

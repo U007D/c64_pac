@@ -1,7 +1,7 @@
 /// Register `FREHI` writer
 pub type W = crate::W<FrehiSpec>;
 /// Field `FREQUENCY` writer - Oscillator frequency, high 8 bits
-pub type FrequencyW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type FrequencyW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl core::fmt::Debug for crate::generic::Reg<FrehiSpec> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "(not readable)")
@@ -21,7 +21,7 @@ impl crate::RegisterSpec for FrehiSpec {
 }
 /// `write(|w| ..)` method takes [`frehi::W`](W) writer structure
 impl crate::Writable for FrehiSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets FREHI to value 0
 impl crate::Resettable for FrehiSpec {}

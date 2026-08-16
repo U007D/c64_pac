@@ -1,7 +1,7 @@
 /// Register `SIGVOL` writer
 pub type W = crate::W<SigvolSpec>;
 /// Field `VOL` writer - Master volume (0-15)
-pub type VolW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type VolW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 /// Low-pass filter output
 pub use crate::vic::scroly::Enable;
 /// Field `LOW_PASS` writer - Low-pass filter output

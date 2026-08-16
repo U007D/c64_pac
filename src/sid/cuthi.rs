@@ -1,7 +1,7 @@
 /// Register `CUTHI` writer
 pub type W = crate::W<CuthiSpec>;
 /// Field `FILTER_CUTOFF_FREQ` writer - Filter cutoff frequency, high 8 bits
-pub type FilterCutoffFreqW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type FilterCutoffFreqW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl core::fmt::Debug for crate::generic::Reg<CuthiSpec> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "(not readable)")
@@ -23,7 +23,7 @@ impl crate::RegisterSpec for CuthiSpec {
 }
 /// `write(|w| ..)` method takes [`cuthi::W`](W) writer structure
 impl crate::Writable for CuthiSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets CUTHI to value 0
 impl crate::Resettable for CuthiSpec {}

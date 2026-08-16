@@ -5,7 +5,7 @@ pub type W = crate::W<TimaloSpec>;
 /// Field `TIMER` reader - Timer A, low 8 bits (read: counter; write: latch)
 pub type TimerR = crate::FieldReader;
 /// Field `TIMER` writer - Timer A, low 8 bits (read: counter; write: latch)
-pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Timer A, low 8 bits (read: counter; write: latch)
     #[inline(always)]
@@ -34,7 +34,7 @@ impl crate::RegisterSpec for TimaloSpec {
 impl crate::Readable for TimaloSpec {}
 /// `write(|w| ..)` method takes [`timalo::W`](W) writer structure
 impl crate::Writable for TimaloSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets TIMALO to value 0
 impl crate::Resettable for TimaloSpec {}

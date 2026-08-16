@@ -13,7 +13,7 @@ pub type CharBaseR = crate::FieldReader;
 /// whole-register value. This field is offset from register bit 0 by 1 bit.
 /// Therefore the book value must be divided by 2 to supply the correct PAC
 /// value.
-pub type CharBaseW<'a, REG> = crate::FieldWriter<'a, REG, 3>;
+pub type CharBaseW<'a, REG> = crate::FieldWriter<'a, REG, 3, u8, crate::Safe>;
 /// Field `VIDEO_MATRIX` reader - Video matrix (screen) base address bits 13:10.
 /// Note: the value provided by the reference (Mapping the C64) for this field
 /// is a whole-register value. This field is offset from register bit 0 by 4
@@ -25,7 +25,7 @@ pub type VideoMatrixR = crate::FieldReader;
 /// is a whole-register value. This field is offset from register bit 0 by 4
 /// bits. Therefore the book value must be divided by 16 to supply the correct
 /// PAC value.
-pub type VideoMatrixW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type VideoMatrixW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 impl R {
     /// Bits 1:3 - Character/bitmap base address bits 13:11. Note: the value
     /// provided by the reference (Mapping the C64) for this field is a

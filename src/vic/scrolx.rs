@@ -5,7 +5,7 @@ pub type W = crate::W<ScrolxSpec>;
 /// Field `XSCROLL` reader - Horizontal fine scroll (0-7)
 pub type XscrollR = crate::FieldReader;
 /// Field `XSCROLL` writer - Horizontal fine scroll (0-7)
-pub type XscrollW<'a, REG> = crate::FieldWriter<'a, REG, 3>;
+pub type XscrollW<'a, REG> = crate::FieldWriter<'a, REG, 3, u8, crate::Safe>;
 /// Text area width: 38 or 40 columns
 ///
 /// Value on reset: 0

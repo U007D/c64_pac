@@ -5,7 +5,7 @@ pub type W = crate::W<TimbhiSpec>;
 /// Field `TIMER` reader - Timer B, high 8 bits (read: counter; write: latch)
 pub type TimerR = crate::FieldReader;
 /// Field `TIMER` writer - Timer B, high 8 bits (read: counter; write: latch)
-pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Timer B, high 8 bits (read: counter; write: latch)
     #[inline(always)]
@@ -32,7 +32,7 @@ impl crate::RegisterSpec for TimbhiSpec {
 impl crate::Readable for TimbhiSpec {}
 /// `write(|w| ..)` method takes [`timbhi::W`](W) writer structure
 impl crate::Writable for TimbhiSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets TIMBHI to value 0
 impl crate::Resettable for TimbhiSpec {}

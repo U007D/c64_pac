@@ -1,9 +1,9 @@
 /// Register `ATDCY` writer
 pub type W = crate::W<AtdcySpec>;
 /// Field `DECAY` writer - Decay rate
-pub type DecayW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type DecayW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 /// Field `ATTACK` writer - Attack rate
-pub type AttackW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type AttackW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 impl core::fmt::Debug for crate::generic::Reg<AtdcySpec> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "(not readable)")

@@ -228,6 +228,7 @@
               <description>Sprite X position, low 8 bits (bit 8 in MSIGX)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -243,6 +244,7 @@
               <description>Sprite Y position</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -271,6 +273,7 @@
               <description>Vertical fine scroll (0-7)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
             </field>
             <field>
               <name>ROW_SELECT</name>
@@ -334,6 +337,7 @@
               <description>Raster line at which a raster IRQ fires, low 8 bits (bit 8 in SCROLY.RST8)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -375,6 +379,7 @@
               <description>Horizontal fine scroll (0-7)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
             </field>
             <field>
               <name>COLUMN_SELECT</name>
@@ -428,12 +433,14 @@
               <description>Character/bitmap base address bits 13:11. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 1 bit. Therefore the book value must be divided by 2 to supply the correct PAC value.</description>
               <bitOffset>1</bitOffset>
               <bitWidth>3</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
             </field>
             <field>
               <name>VIDEO_MATRIX</name>
               <description>Video matrix (screen) base address bits 13:10. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 4 bits. Therefore the book value must be divided by 16 to supply the correct PAC value.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>4</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -749,6 +756,7 @@
               <description>Oscillator frequency, low 8 bits</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -763,6 +771,7 @@
               <description>Oscillator frequency, high 8 bits</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -777,6 +786,7 @@
               <description>Pulse waveform width, low 8 bits</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -791,6 +801,7 @@
                 <description>Pulse width bits 11:8</description>
                 <bitOffset>0</bitOffset>
                 <bitWidth>4</bitWidth>
+                <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
               </field>
             </fields>
           </register>
@@ -877,12 +888,14 @@
                 <description>Decay rate</description>
                 <bitOffset>0</bitOffset>
                 <bitWidth>4</bitWidth>
+                <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
               </field>
               <field>
                 <name>ATTACK</name>
                 <description>Attack rate</description>
                 <bitOffset>4</bitOffset>
                 <bitWidth>4</bitWidth>
+                <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
               </field>
             </fields>
           </register>
@@ -897,12 +910,14 @@
                 <description>Release rate</description>
                 <bitOffset>0</bitOffset>
                 <bitWidth>4</bitWidth>
+                <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
               </field>
               <field>
                 <name>SUSTAIN</name>
                 <description>Sustain level</description>
                 <bitOffset>4</bitOffset>
                 <bitWidth>4</bitWidth>
+                <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
               </field>
             </fields>
           </register>
@@ -918,6 +933,7 @@
               <description>Filter cutoff bits 2:0</description>
               <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -932,6 +948,7 @@
               <description>Filter cutoff frequency, high 8 bits</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -974,6 +991,7 @@
               <description>Filter resonance (0-15)</description>
               <bitOffset>4</bitOffset>
               <bitWidth>4</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -988,6 +1006,7 @@
               <description>Master volume (0-15)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>4</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
             </field>
             <field>
               <name>LOW_PASS</name>
@@ -1344,6 +1363,7 @@
               <description>Timer A, low 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1357,6 +1377,7 @@
               <description>Timer A, high 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1370,6 +1391,7 @@
               <description>Timer B, low 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1383,6 +1405,7 @@
               <description>Timer B, high 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1459,6 +1482,7 @@
               <description>Serial shift-register byte</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1968,6 +1992,7 @@
               <description>Timer A, low 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1981,6 +2006,7 @@
               <description>Timer A, high 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -1994,6 +2020,7 @@
               <description>Timer B, low 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -2007,6 +2034,7 @@
               <description>Timer B, high 8 bits (read: counter; write: latch)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>
@@ -2083,6 +2111,7 @@
               <description>Serial shift-register byte</description>
               <bitOffset>0</bitOffset>
               <bitWidth>8</bitWidth>
+              <writeConstraint><range><minimum>0</minimum><maximum>255</maximum></range></writeConstraint>
             </field>
           </fields>
         </register>

@@ -1,9 +1,9 @@
 /// Register `SUREL` writer
 pub type W = crate::W<SurelSpec>;
 /// Field `RELEASE` writer - Release rate
-pub type ReleaseW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type ReleaseW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 /// Field `SUSTAIN` writer - Sustain level
-pub type SustainW<'a, REG> = crate::FieldWriter<'a, REG, 4>;
+pub type SustainW<'a, REG> = crate::FieldWriter<'a, REG, 4, u8, crate::Safe>;
 impl core::fmt::Debug for crate::generic::Reg<SurelSpec> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "(not readable)")

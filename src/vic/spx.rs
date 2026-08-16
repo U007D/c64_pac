@@ -5,7 +5,7 @@ pub type W = crate::W<SpxSpec>;
 /// Field `POSITION` reader - Sprite X position, low 8 bits (bit 8 in MSIGX)
 pub type PositionR = crate::FieldReader;
 /// Field `POSITION` writer - Sprite X position, low 8 bits (bit 8 in MSIGX)
-pub type PositionW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type PositionW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Sprite X position, low 8 bits (bit 8 in MSIGX)
     #[inline(always)]
@@ -32,7 +32,7 @@ impl crate::RegisterSpec for SpxSpec {
 impl crate::Readable for SpxSpec {}
 /// `write(|w| ..)` method takes [`spx::W`](W) writer structure
 impl crate::Writable for SpxSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets SP%sX to value 0
 impl crate::Resettable for SpxSpec {}

@@ -5,7 +5,7 @@ pub type W = crate::W<ScrolySpec>;
 /// Field `YSCROLL` reader - Vertical fine scroll (0-7)
 pub type YscrollR = crate::FieldReader;
 /// Field `YSCROLL` writer - Vertical fine scroll (0-7)
-pub type YscrollW<'a, REG> = crate::FieldWriter<'a, REG, 3>;
+pub type YscrollW<'a, REG> = crate::FieldWriter<'a, REG, 3, u8, crate::Safe>;
 /// Text area height: 24 or 25 rows
 ///
 /// Value on reset: 0

@@ -5,7 +5,7 @@ pub type W = crate::W<Ti2bloSpec>;
 /// Field `TIMER` reader - Timer B, low 8 bits (read: counter; write: latch)
 pub type TimerR = crate::FieldReader;
 /// Field `TIMER` writer - Timer B, low 8 bits (read: counter; write: latch)
-pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8>;
+pub type TimerW<'a, REG> = crate::FieldWriter<'a, REG, 8, u8, crate::Safe>;
 impl R {
     /// Bits 0:7 - Timer B, low 8 bits (read: counter; write: latch)
     #[inline(always)]
@@ -32,7 +32,7 @@ impl crate::RegisterSpec for Ti2bloSpec {
 impl crate::Readable for Ti2bloSpec {}
 /// `write(|w| ..)` method takes [`ti2blo::W`](W) writer structure
 impl crate::Writable for Ti2bloSpec {
-    type Safety = crate::Unsafe;
+    type Safety = crate::Safe;
 }
 /// `reset()` method sets TI2BLO to value 0
 impl crate::Resettable for Ti2bloSpec {}
