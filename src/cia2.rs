@@ -114,12 +114,14 @@ impl RegisterBlock {
     }
 
     /// 0x0e - Control register A (same layout as CIA1.CRA; the timer-output
-    /// bits act on this CIA's PB6)
+    /// bits act on this CIA's PB6). Bit 4 (FORCE_LATCHED_LOAD) is a write-only
+    /// strobe that always reads back 0, so it appears on the writer only
     #[inline(always)]
     pub const fn ci2cra(&self) -> &Ci2cra { &self.ci2cra }
 
     /// 0x0f - Control register B (same layout as CIA1.CRB; the timer-output
-    /// bits act on this CIA's PB7)
+    /// bits act on this CIA's PB7). Bit 4 (FORCE_LATCHED_LOAD) is a write-only
+    /// strobe that always reads back 0, so it appears on the writer only
     #[inline(always)]
     pub const fn ci2crb(&self) -> &Ci2crb { &self.ci2crb }
 }
@@ -317,7 +319,9 @@ pub type Ci2icrW = crate::Reg<ci2icr_w::Ci2icrWSpec>;
 /// interrupts are enabled.
 pub mod ci2icr_w;
 /// CI2CRA (rw) register accessor: Control register A (same layout as CIA1.CRA;
-/// the timer-output bits act on this CIA's PB6)
+/// the timer-output bits act on this CIA's PB6). Bit 4 (FORCE_LATCHED_LOAD) is
+/// a write-only strobe that always reads back 0, so it appears on the writer
+/// only
 ///
 /// You can [`read`](crate::Reg::read) this register and get [`ci2cra::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ci2cra::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
@@ -325,10 +329,13 @@ pub mod ci2icr_w;
 #[doc(alias = "CI2CRA")]
 pub type Ci2cra = crate::Reg<ci2cra::Ci2craSpec>;
 /// Control register A (same layout as CIA1.CRA; the timer-output bits act on
-/// this CIA's PB6)
+/// this CIA's PB6). Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that
+/// always reads back 0, so it appears on the writer only
 pub mod ci2cra;
 /// CI2CRB (rw) register accessor: Control register B (same layout as CIA1.CRB;
-/// the timer-output bits act on this CIA's PB7)
+/// the timer-output bits act on this CIA's PB7). Bit 4 (FORCE_LATCHED_LOAD) is
+/// a write-only strobe that always reads back 0, so it appears on the writer
+/// only
 ///
 /// You can [`read`](crate::Reg::read) this register and get [`ci2crb::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ci2crb::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
@@ -336,5 +343,6 @@ pub mod ci2cra;
 #[doc(alias = "CI2CRB")]
 pub type Ci2crb = crate::Reg<ci2crb::Ci2crbSpec>;
 /// Control register B (same layout as CIA1.CRB; the timer-output bits act on
-/// this CIA's PB7)
+/// this CIA's PB7). Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that
+/// always reads back 0, so it appears on the writer only
 pub mod ci2crb;

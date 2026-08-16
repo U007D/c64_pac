@@ -1526,30 +1526,22 @@
         </register>
         <register>
           <name>CIACRA</name>
-          <description>Control register A</description>
+          <description>Control register A. Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it appears on the writer only</description>
           <addressOffset>0xE</addressOffset>
           <fields>
             <field>
               <name>START_TIMER</name>
-              <description>Start/stop timer A. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <description>Start/stop timer A. SIDE-EFFECT: writing Enabled begins the count immediately.</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>StartTimer</name>
-                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>SELECT_TIMER_OUTPUT</name>
-              <description>Route timer A underflow onto PB6</description>
+              <description>Route timer A underflow onto PB6 (Enabled) instead of using it as general I/O (Disabled)</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>SelectTimerOutput</name>
-                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>PORT_OUTPUT_MODE</name>
@@ -1575,13 +1567,14 @@
             </field>
             <field>
               <name>FORCE_LATCHED_LOAD</name>
-              <description>Force-load timer A from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <description>Force-load timer A from its latch. A strobe: writing Execute performs the load, writing Idle does nothing. Write-only, hence no reader: the bit always reads back Idle no matter what was last written, so a read carries no information about the hardware. SIDE-EFFECT: writing Execute copies the latch into the counter immediately.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+              <access>write-only</access>
               <enumeratedValues>
                 <name>ForceLatchedLoad</name>
-                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Idle</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Execute</name><value>1</value></enumeratedValue>
               </enumeratedValues>
             </field>
             <field>
@@ -1621,30 +1614,22 @@
         </register>
         <register>
           <name>CIACRB</name>
-          <description>Control register B</description>
+          <description>Control register B. Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it appears on the writer only</description>
           <addressOffset>0xF</addressOffset>
           <fields>
             <field>
               <name>START_TIMER</name>
-              <description>Start/stop timer B. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <description>Start/stop timer B. SIDE-EFFECT: writing Enabled begins the count immediately.</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>StartTimer</name>
-                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>SELECT_TIMER_OUTPUT</name>
-              <description>Route timer B underflow onto PB7</description>
+              <description>Route timer B underflow onto PB7 (Enabled) instead of using it as general I/O (Disabled)</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>SelectTimerOutput</name>
-                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>PORT_OUTPUT_MODE</name>
@@ -1670,13 +1655,14 @@
             </field>
             <field>
               <name>FORCE_LATCHED_LOAD</name>
-              <description>Force-load timer B from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <description>Force-load timer B from its latch. A strobe: writing Execute performs the load, writing Idle does nothing. Write-only, hence no reader: the bit always reads back Idle no matter what was last written, so a read carries no information about the hardware. SIDE-EFFECT: writing Execute copies the latch into the counter immediately.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+              <access>write-only</access>
               <enumeratedValues>
                 <name>ForceLatchedLoad</name>
-                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Idle</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Execute</name><value>1</value></enumeratedValue>
               </enumeratedValues>
             </field>
             <field>
@@ -2160,30 +2146,22 @@
         </register>
         <register>
           <name>CI2CRA</name>
-          <description>Control register A (same layout as CIA1.CRA; the timer-output bits act on this CIA's PB6)</description>
+          <description>Control register A (same layout as CIA1.CRA; the timer-output bits act on this CIA's PB6). Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it appears on the writer only</description>
           <addressOffset>0xE</addressOffset>
           <fields>
             <field>
               <name>START_TIMER</name>
-              <description>Start/stop timer A. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <description>Start/stop timer A. SIDE-EFFECT: writing Enabled begins the count immediately.</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>StartTimer</name>
-                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>SELECT_TIMER_OUTPUT</name>
-              <description>Route timer A underflow onto PB6</description>
+              <description>Route timer A underflow onto PB6 (Enabled) instead of using it as general I/O (Disabled)</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>SelectTimerOutput</name>
-                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>PORT_OUTPUT_MODE</name>
@@ -2209,13 +2187,14 @@
             </field>
             <field>
               <name>FORCE_LATCHED_LOAD</name>
-              <description>Force-load timer A from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <description>Force-load timer A from its latch. A strobe: writing Execute performs the load, writing Idle does nothing. Write-only, hence no reader: the bit always reads back Idle no matter what was last written, so a read carries no information about the hardware. SIDE-EFFECT: writing Execute copies the latch into the counter immediately.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+              <access>write-only</access>
               <enumeratedValues>
                 <name>ForceLatchedLoad</name>
-                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Idle</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Execute</name><value>1</value></enumeratedValue>
               </enumeratedValues>
             </field>
             <field>
@@ -2255,30 +2234,22 @@
         </register>
         <register>
           <name>CI2CRB</name>
-          <description>Control register B (same layout as CIA1.CRB; the timer-output bits act on this CIA's PB7)</description>
+          <description>Control register B (same layout as CIA1.CRB; the timer-output bits act on this CIA's PB7). Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it appears on the writer only</description>
           <addressOffset>0xF</addressOffset>
           <fields>
             <field>
               <name>START_TIMER</name>
-              <description>Start/stop timer B. SIDE-EFFECT: writing Started begins the count immediately.</description>
+              <description>Start/stop timer B. SIDE-EFFECT: writing Enabled begins the count immediately.</description>
               <bitOffset>0</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>StartTimer</name>
-                <enumeratedValue><name>Stopped</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Started</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>SELECT_TIMER_OUTPUT</name>
-              <description>Route timer B underflow onto PB7</description>
+              <description>Route timer B underflow onto PB7 (Enabled) instead of using it as general I/O (Disabled)</description>
               <bitOffset>1</bitOffset>
               <bitWidth>1</bitWidth>
-              <enumeratedValues>
-                <name>SelectTimerOutput</name>
-                <enumeratedValue><name>OutputUnavailable</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>OutputAvailable</name><value>1</value></enumeratedValue>
-              </enumeratedValues>
+              <enumeratedValues derivedFrom="VIC.SCROLY.SCREEN.Enable"/>
             </field>
             <field>
               <name>PORT_OUTPUT_MODE</name>
@@ -2304,13 +2275,14 @@
             </field>
             <field>
               <name>FORCE_LATCHED_LOAD</name>
-              <description>Force-load timer B from its latch (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the counter immediately.</description>
+              <description>Force-load timer B from its latch. A strobe: writing Execute performs the load, writing Idle does nothing. Write-only, hence no reader: the bit always reads back Idle no matter what was last written, so a read carries no information about the hardware. SIDE-EFFECT: writing Execute copies the latch into the counter immediately.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>1</bitWidth>
+              <access>write-only</access>
               <enumeratedValues>
                 <name>ForceLatchedLoad</name>
-                <enumeratedValue><name>DoNothing</name><value>0</value></enumeratedValue>
-                <enumeratedValue><name>Load</name><value>1</value></enumeratedValue>
+                <enumeratedValue><name>Idle</name><value>0</value></enumeratedValue>
+                <enumeratedValue><name>Execute</name><value>1</value></enumeratedValue>
               </enumeratedValues>
             </field>
             <field>

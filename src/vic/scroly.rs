@@ -70,6 +70,14 @@ impl From<Enable> for bool {
 ///
 /// **Shared field type.** The same writer is reused for the fields below;
 /// each keeps its own description — click through to read it in context:
+/// - [`cia1::ciacra::SelectTimerOutputR`](crate::cia1::ciacra::SelectTimerOutputR)
+/// - [`cia1::ciacra::StartTimerR`](crate::cia1::ciacra::StartTimerR)
+/// - [`cia1::ciacrb::SelectTimerOutputR`](crate::cia1::ciacrb::SelectTimerOutputR)
+/// - [`cia1::ciacrb::StartTimerR`](crate::cia1::ciacrb::StartTimerR)
+/// - [`cia2::ci2cra::SelectTimerOutputR`](crate::cia2::ci2cra::SelectTimerOutputR)
+/// - [`cia2::ci2cra::StartTimerR`](crate::cia2::ci2cra::StartTimerR)
+/// - [`cia2::ci2crb::SelectTimerOutputR`](crate::cia2::ci2crb::SelectTimerOutputR)
+/// - [`cia2::ci2crb::StartTimerR`](crate::cia2::ci2crb::StartTimerR)
 /// - [`vic::irqmask::LightPenR`](crate::vic::irqmask::LightPenR)
 /// - [`vic::irqmask::RasterR`](crate::vic::irqmask::RasterR)
 /// - [`vic::irqmask::SpriteBgCollisionR`](crate::vic::irqmask::SpriteBgCollisionR)
@@ -105,7 +113,15 @@ impl ScreenR {
 ///
 /// **Shared field type.** The same writer is reused for the fields below;
 /// each keeps its own description — click through to read it in context:
+/// - [`cia1::ciacra::SelectTimerOutputW`](crate::cia1::ciacra::SelectTimerOutputW)
+/// - [`cia1::ciacra::StartTimerW`](crate::cia1::ciacra::StartTimerW)
+/// - [`cia1::ciacrb::SelectTimerOutputW`](crate::cia1::ciacrb::SelectTimerOutputW)
+/// - [`cia1::ciacrb::StartTimerW`](crate::cia1::ciacrb::StartTimerW)
 /// - [`cia1::ciaicr_w::ModeW`](crate::cia1::ciaicr_w::ModeW)
+/// - [`cia2::ci2cra::SelectTimerOutputW`](crate::cia2::ci2cra::SelectTimerOutputW)
+/// - [`cia2::ci2cra::StartTimerW`](crate::cia2::ci2cra::StartTimerW)
+/// - [`cia2::ci2crb::SelectTimerOutputW`](crate::cia2::ci2crb::SelectTimerOutputW)
+/// - [`cia2::ci2crb::StartTimerW`](crate::cia2::ci2crb::StartTimerW)
 /// - [`cia2::ci2icr_w::ModeW`](crate::cia2::ci2icr_w::ModeW)
 /// - [`sid::reson::Filt1W`](crate::sid::reson::Filt1W)
 /// - [`sid::reson::Filt2W`](crate::sid::reson::Filt2W)

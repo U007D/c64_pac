@@ -2,103 +2,21 @@
 pub type R = crate::R<Ci2crbSpec>;
 /// Register `CI2CRB` writer
 pub type W = crate::W<Ci2crbSpec>;
-/// Start/stop timer B. SIDE-EFFECT: writing Started begins the count
+/// Start/stop timer B. SIDE-EFFECT: writing Enabled begins the count
 /// immediately.
-///
-/// Value on reset: 0
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum StartTimer {
-    /// 0: `0`
-    Stopped = 0,
-    /// 1: `1`
-    Started = 1,
-}
-impl From<StartTimer> for bool {
-    #[inline(always)]
-    fn from(variant: StartTimer) -> Self { variant as u8 != 0 }
-}
+pub use crate::vic::scroly::Enable;
 /// Field `START_TIMER` reader - Start/stop timer B. SIDE-EFFECT: writing
-/// Started begins the count immediately.
-pub type StartTimerR = crate::BitReader<StartTimer>;
-impl StartTimerR {
-    /// Get enumerated values variant
-    #[inline(always)]
-    pub const fn variant(&self) -> StartTimer {
-        match self.bits {
-            false => StartTimer::Stopped,
-            true => StartTimer::Started,
-        }
-    }
-
-    /// `0`
-    #[inline(always)]
-    pub fn is_stopped(&self) -> bool { *self == StartTimer::Stopped }
-
-    /// `1`
-    #[inline(always)]
-    pub fn is_started(&self) -> bool { *self == StartTimer::Started }
-}
-/// Field `START_TIMER` writer - Start/stop timer B. SIDE-EFFECT: writing
-/// Started begins the count immediately.
-pub type StartTimerW<'a, REG> = crate::BitWriter<'a, REG, StartTimer>;
-impl<'a, REG> StartTimerW<'a, REG> where REG: crate::Writable + crate::RegisterSpec, {
-    /// `0`
-    #[inline(always)]
-    pub fn stopped(self) -> &'a mut crate::W<REG> { self.variant(StartTimer::Stopped) }
-
-    /// `1`
-    #[inline(always)]
-    pub fn started(self) -> &'a mut crate::W<REG> { self.variant(StartTimer::Started) }
-}
-/// Route timer B underflow onto PB7
-///
-/// Value on reset: 0
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SelectTimerOutput {
-    /// 0: `0`
-    OutputUnavailable = 0,
-    /// 1: `1`
-    OutputAvailable = 1,
-}
-impl From<SelectTimerOutput> for bool {
-    #[inline(always)]
-    fn from(variant: SelectTimerOutput) -> Self { variant as u8 != 0 }
-}
+/// Enabled begins the count immediately.
+pub use crate::vic::scroly::ScreenR as StartTimerR;
 /// Field `SELECT_TIMER_OUTPUT` reader - Route timer B underflow onto PB7
-pub type SelectTimerOutputR = crate::BitReader<SelectTimerOutput>;
-impl SelectTimerOutputR {
-    /// Get enumerated values variant
-    #[inline(always)]
-    pub const fn variant(&self) -> SelectTimerOutput {
-        match self.bits {
-            false => SelectTimerOutput::OutputUnavailable,
-            true => SelectTimerOutput::OutputAvailable,
-        }
-    }
-
-    /// `0`
-    #[inline(always)]
-    pub fn is_output_unavailable(&self) -> bool { *self == SelectTimerOutput::OutputUnavailable }
-
-    /// `1`
-    #[inline(always)]
-    pub fn is_output_available(&self) -> bool { *self == SelectTimerOutput::OutputAvailable }
-}
+/// (Enabled) instead of using it as general I/O (Disabled)
+pub use crate::vic::scroly::ScreenR as SelectTimerOutputR;
+/// Field `START_TIMER` writer - Start/stop timer B. SIDE-EFFECT: writing
+/// Enabled begins the count immediately.
+pub use crate::vic::scroly::ScreenW as StartTimerW;
 /// Field `SELECT_TIMER_OUTPUT` writer - Route timer B underflow onto PB7
-pub type SelectTimerOutputW<'a, REG> = crate::BitWriter<'a, REG, SelectTimerOutput>;
-impl<'a, REG> SelectTimerOutputW<'a, REG> where REG: crate::Writable + crate::RegisterSpec, {
-    /// `0`
-    #[inline(always)]
-    pub fn output_unavailable(self) -> &'a mut crate::W<REG> {
-        self.variant(SelectTimerOutput::OutputUnavailable)
-    }
-
-    /// `1`
-    #[inline(always)]
-    pub fn output_available(self) -> &'a mut crate::W<REG> {
-        self.variant(SelectTimerOutput::OutputAvailable)
-    }
-}
+/// (Enabled) instead of using it as general I/O (Disabled)
+pub use crate::vic::scroly::ScreenW as SelectTimerOutputW;
 /// PB7 output waveform on timer B underflow
 ///
 /// Value on reset: 0
@@ -189,55 +107,38 @@ impl<'a, REG> TimerRunModeW<'a, REG> where REG: crate::Writable + crate::Registe
     #[inline(always)]
     pub fn one_shot(self) -> &'a mut crate::W<REG> { self.variant(TimerRunMode::OneShot) }
 }
-/// Force-load timer B from its latch (strobe, reads 0). SIDE-EFFECT: writing
-/// Load copies the latch into the counter immediately.
+/// Force-load timer B from its latch. A strobe: writing Execute performs the
+/// load, writing Idle does nothing. Write-only, hence no reader: the bit always
+/// reads back Idle no matter what was last written, so a read carries no
+/// information about the hardware. SIDE-EFFECT: writing Execute copies the
+/// latch into the counter immediately.
 ///
 /// Value on reset: 0
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ForceLatchedLoad {
     /// 0: `0`
-    DoNothing = 0,
+    Idle = 0,
     /// 1: `1`
-    Load = 1,
+    Execute = 1,
 }
 impl From<ForceLatchedLoad> for bool {
     #[inline(always)]
     fn from(variant: ForceLatchedLoad) -> Self { variant as u8 != 0 }
 }
-/// Field `FORCE_LATCHED_LOAD` reader - Force-load timer B from its latch
-/// (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the
-/// counter immediately.
-pub type ForceLatchedLoadR = crate::BitReader<ForceLatchedLoad>;
-impl ForceLatchedLoadR {
-    /// Get enumerated values variant
-    #[inline(always)]
-    pub const fn variant(&self) -> ForceLatchedLoad {
-        match self.bits {
-            false => ForceLatchedLoad::DoNothing,
-            true => ForceLatchedLoad::Load,
-        }
-    }
-
-    /// `0`
-    #[inline(always)]
-    pub fn is_do_nothing(&self) -> bool { *self == ForceLatchedLoad::DoNothing }
-
-    /// `1`
-    #[inline(always)]
-    pub fn is_load(&self) -> bool { *self == ForceLatchedLoad::Load }
-}
-/// Field `FORCE_LATCHED_LOAD` writer - Force-load timer B from its latch
-/// (strobe, reads 0). SIDE-EFFECT: writing Load copies the latch into the
-/// counter immediately.
+/// Field `FORCE_LATCHED_LOAD` writer - Force-load timer B from its latch. A
+/// strobe: writing Execute performs the load, writing Idle does nothing.
+/// Write-only, hence no reader: the bit always reads back Idle no matter what
+/// was last written, so a read carries no information about the hardware.
+/// SIDE-EFFECT: writing Execute copies the latch into the counter immediately.
 pub type ForceLatchedLoadW<'a, REG> = crate::BitWriter<'a, REG, ForceLatchedLoad>;
 impl<'a, REG> ForceLatchedLoadW<'a, REG> where REG: crate::Writable + crate::RegisterSpec, {
     /// `0`
     #[inline(always)]
-    pub fn do_nothing(self) -> &'a mut crate::W<REG> { self.variant(ForceLatchedLoad::DoNothing) }
+    pub fn idle(self) -> &'a mut crate::W<REG> { self.variant(ForceLatchedLoad::Idle) }
 
     /// `1`
     #[inline(always)]
-    pub fn load(self) -> &'a mut crate::W<REG> { self.variant(ForceLatchedLoad::Load) }
+    pub fn execute(self) -> &'a mut crate::W<REG> { self.variant(ForceLatchedLoad::Execute) }
 }
 /// What timer B counts
 ///
@@ -369,12 +270,13 @@ impl<'a, REG> TodWriteModeW<'a, REG> where REG: crate::Writable + crate::Registe
     pub fn alarm(self) -> &'a mut crate::W<REG> { self.variant(TodWriteMode::Alarm) }
 }
 impl R {
-    /// Bit 0 - Start/stop timer B. SIDE-EFFECT: writing Started begins the
+    /// Bit 0 - Start/stop timer B. SIDE-EFFECT: writing Enabled begins the
     /// count immediately.
     #[inline(always)]
     pub fn start_timer(&self) -> StartTimerR { StartTimerR::new((self.bits & 1) != 0) }
 
-    /// Bit 1 - Route timer B underflow onto PB7
+    /// Bit 1 - Route timer B underflow onto PB7 (Enabled) instead of using it
+    /// as general I/O (Disabled)
     #[inline(always)]
     pub fn select_timer_output(&self) -> SelectTimerOutputR {
         SelectTimerOutputR::new(((self.bits >> 1) & 1) != 0)
@@ -390,13 +292,6 @@ impl R {
     #[inline(always)]
     pub fn timer_run_mode(&self) -> TimerRunModeR {
         TimerRunModeR::new(((self.bits >> 3) & 1) != 0)
-    }
-
-    /// Bit 4 - Force-load timer B from its latch (strobe, reads 0).
-    /// SIDE-EFFECT: writing Load copies the latch into the counter immediately.
-    #[inline(always)]
-    pub fn force_latched_load(&self) -> ForceLatchedLoadR {
-        ForceLatchedLoadR::new(((self.bits >> 4) & 1) != 0)
     }
 
     /// Bits 5:6 - What timer B counts
@@ -416,19 +311,19 @@ impl core::fmt::Debug for R {
          .field("select_timer_output", &self.select_timer_output())
          .field("port_output_mode", &self.port_output_mode())
          .field("timer_run_mode", &self.timer_run_mode())
-         .field("force_latched_load", &self.force_latched_load())
          .field("timer_input_mode", &self.timer_input_mode())
          .field("tod_write_mode", &self.tod_write_mode())
          .finish()
     }
 }
 impl W {
-    /// Bit 0 - Start/stop timer B. SIDE-EFFECT: writing Started begins the
+    /// Bit 0 - Start/stop timer B. SIDE-EFFECT: writing Enabled begins the
     /// count immediately.
     #[inline(always)]
     pub fn start_timer(&mut self) -> StartTimerW<'_, Ci2crbSpec> { StartTimerW::new(self, 0) }
 
-    /// Bit 1 - Route timer B underflow onto PB7
+    /// Bit 1 - Route timer B underflow onto PB7 (Enabled) instead of using it
+    /// as general I/O (Disabled)
     #[inline(always)]
     pub fn select_timer_output(&mut self) -> SelectTimerOutputW<'_, Ci2crbSpec> {
         SelectTimerOutputW::new(self, 1)
@@ -446,8 +341,11 @@ impl W {
         TimerRunModeW::new(self, 3)
     }
 
-    /// Bit 4 - Force-load timer B from its latch (strobe, reads 0).
-    /// SIDE-EFFECT: writing Load copies the latch into the counter immediately.
+    /// Bit 4 - Force-load timer B from its latch. A strobe: writing Execute
+    /// performs the load, writing Idle does nothing. Write-only, hence no
+    /// reader: the bit always reads back Idle no matter what was last written,
+    /// so a read carries no information about the hardware. SIDE-EFFECT:
+    /// writing Execute copies the latch into the counter immediately.
     #[inline(always)]
     pub fn force_latched_load(&mut self) -> ForceLatchedLoadW<'_, Ci2crbSpec> {
         ForceLatchedLoadW::new(self, 4)
@@ -466,7 +364,8 @@ impl W {
     }
 }
 /// Control register B (same layout as CIA1.CRB; the timer-output bits act on
-/// this CIA's PB7)
+/// this CIA's PB7). Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that
+/// always reads back 0, so it appears on the writer only
 ///
 /// You can [`read`](crate::Reg::read) this register and get [`ci2crb::R`](R). You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ci2crb::W`](W). You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 pub struct Ci2crbSpec;

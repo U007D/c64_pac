@@ -111,11 +111,13 @@ impl RegisterBlock {
         unsafe { &*core::ptr::from_ref(self).cast::<u8>().add(13).cast() }
     }
 
-    /// 0x0e - Control register A
+    /// 0x0e - Control register A. Bit 4 (FORCE_LATCHED_LOAD) is a write-only
+    /// strobe that always reads back 0, so it appears on the writer only
     #[inline(always)]
     pub const fn ciacra(&self) -> &Ciacra { &self.ciacra }
 
-    /// 0x0f - Control register B
+    /// 0x0f - Control register B. Bit 4 (FORCE_LATCHED_LOAD) is a write-only
+    /// strobe that always reads back 0, so it appears on the writer only
     #[inline(always)]
     pub const fn ciacrb(&self) -> &Ciacrb { &self.ciacrb }
 }
@@ -312,21 +314,27 @@ pub type CiaicrW = crate::Reg<ciaicr_w::CiaicrWSpec>;
 /// way. Read status via CIAICR_R. SIDE-EFFECT: this write changes which
 /// interrupts are enabled.
 pub mod ciaicr_w;
-/// CIACRA (rw) register accessor: Control register A
+/// CIACRA (rw) register accessor: Control register A. Bit 4
+/// (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it
+/// appears on the writer only
 ///
 /// You can [`read`](crate::Reg::read) this register and get [`ciacra::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ciacra::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
 /// For information about available fields see [`mod@ciacra`] module
 #[doc(alias = "CIACRA")]
 pub type Ciacra = crate::Reg<ciacra::CiacraSpec>;
-/// Control register A
+/// Control register A. Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that
+/// always reads back 0, so it appears on the writer only
 pub mod ciacra;
-/// CIACRB (rw) register accessor: Control register B
+/// CIACRB (rw) register accessor: Control register B. Bit 4
+/// (FORCE_LATCHED_LOAD) is a write-only strobe that always reads back 0, so it
+/// appears on the writer only
 ///
 /// You can [`read`](crate::Reg::read) this register and get [`ciacrb::R`]. You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ciacrb::W`]. You can also [`modify`](crate::Reg::modify) this register. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
 /// For information about available fields see [`mod@ciacrb`] module
 #[doc(alias = "CIACRB")]
 pub type Ciacrb = crate::Reg<ciacrb::CiacrbSpec>;
-/// Control register B
+/// Control register B. Bit 4 (FORCE_LATCHED_LOAD) is a write-only strobe that
+/// always reads back 0, so it appears on the writer only
 pub mod ciacrb;
