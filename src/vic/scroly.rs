@@ -67,6 +67,20 @@ impl From<Enable> for bool {
 }
 /// Field `SCREEN` reader - Enable the display; Disabled blanks the screen to
 /// border color
+///
+/// **Shared field type.** The same writer is reused for the fields below;
+/// each keeps its own description — click through to read it in context:
+/// - [`vic::irqmask::LightPenR`](crate::vic::irqmask::LightPenR)
+/// - [`vic::irqmask::RasterR`](crate::vic::irqmask::RasterR)
+/// - [`vic::irqmask::SpriteBgCollisionR`](crate::vic::irqmask::SpriteBgCollisionR)
+/// - [`vic::irqmask::SpriteSpriteCollisionR`](crate::vic::irqmask::SpriteSpriteCollisionR)
+/// - [`vic::scrolx::MulticolorModeR`](crate::vic::scrolx::MulticolorModeR)
+/// - [`vic::scroly::BitmapModeR`](crate::vic::scroly::BitmapModeR)
+/// - [`vic::scroly::ExtendedColorModeR`](crate::vic::scroly::ExtendedColorModeR)
+/// - [`vic::spena::SpriteR`](crate::vic::spena::SpriteR)
+/// - [`vic::spmc::SpriteR`](crate::vic::spmc::SpriteR)
+/// - [`vic::xxpand::SpriteR`](crate::vic::xxpand::SpriteR)
+/// - [`vic::yxpand::SpriteR`](crate::vic::yxpand::SpriteR)
 pub type ScreenR = crate::BitReader<Enable>;
 impl ScreenR {
     /// Get enumerated values variant
@@ -88,6 +102,35 @@ impl ScreenR {
 }
 /// Field `SCREEN` writer - Enable the display; Disabled blanks the screen to
 /// border color
+///
+/// **Shared field type.** The same writer is reused for the fields below;
+/// each keeps its own description — click through to read it in context:
+/// - [`cia1::ciaicr_w::ModeW`](crate::cia1::ciaicr_w::ModeW)
+/// - [`cia2::ci2icr_w::ModeW`](crate::cia2::ci2icr_w::ModeW)
+/// - [`sid::reson::Filt1W`](crate::sid::reson::Filt1W)
+/// - [`sid::reson::Filt2W`](crate::sid::reson::Filt2W)
+/// - [`sid::reson::Filt3W`](crate::sid::reson::Filt3W)
+/// - [`sid::reson::FiltExtW`](crate::sid::reson::FiltExtW)
+/// - [`sid::sigvol::BandPassW`](crate::sid::sigvol::BandPassW)
+/// - [`sid::sigvol::HighPassW`](crate::sid::sigvol::HighPassW)
+/// - [`sid::sigvol::LowPassW`](crate::sid::sigvol::LowPassW)
+/// - [`sid::voice::vcreg::NoiseW`](crate::sid::voice::vcreg::NoiseW)
+/// - [`sid::voice::vcreg::PulseW`](crate::sid::voice::vcreg::PulseW)
+/// - [`sid::voice::vcreg::RingW`](crate::sid::voice::vcreg::RingW)
+/// - [`sid::voice::vcreg::SawtoothW`](crate::sid::voice::vcreg::SawtoothW)
+/// - [`sid::voice::vcreg::SyncW`](crate::sid::voice::vcreg::SyncW)
+/// - [`sid::voice::vcreg::TriangleW`](crate::sid::voice::vcreg::TriangleW)
+/// - [`vic::irqmask::LightPenW`](crate::vic::irqmask::LightPenW)
+/// - [`vic::irqmask::RasterW`](crate::vic::irqmask::RasterW)
+/// - [`vic::irqmask::SpriteBgCollisionW`](crate::vic::irqmask::SpriteBgCollisionW)
+/// - [`vic::irqmask::SpriteSpriteCollisionW`](crate::vic::irqmask::SpriteSpriteCollisionW)
+/// - [`vic::scrolx::MulticolorModeW`](crate::vic::scrolx::MulticolorModeW)
+/// - [`vic::scroly::BitmapModeW`](crate::vic::scroly::BitmapModeW)
+/// - [`vic::scroly::ExtendedColorModeW`](crate::vic::scroly::ExtendedColorModeW)
+/// - [`vic::spena::SpriteW`](crate::vic::spena::SpriteW)
+/// - [`vic::spmc::SpriteW`](crate::vic::spmc::SpriteW)
+/// - [`vic::xxpand::SpriteW`](crate::vic::xxpand::SpriteW)
+/// - [`vic::yxpand::SpriteW`](crate::vic::yxpand::SpriteW)
 pub type ScreenW<'a, REG> = crate::BitWriter<'a, REG, Enable>;
 impl<'a, REG> ScreenW<'a, REG> where REG: crate::Writable + crate::RegisterSpec, {
     /// `0`

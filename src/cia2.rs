@@ -92,11 +92,13 @@ impl RegisterBlock {
     #[inline(always)]
     pub const fn ci2sdr(&self) -> &Ci2sdr { &self.ci2sdr }
 
-    /// 0x0d - Interrupt mask (write-only alternate view of 0xDD0D). Bit 7
-    /// (MODE) is the set/clear selector: with MODE enabled the source bits you
-    /// enable are turned on, with MODE disabled they are turned off; bits left
-    /// 0 are unchanged. Read status via CI2ICR_R. SIDE-EFFECT: this write
-    /// changes which interrupts are enabled.
+    /// 0x0d - Interrupt mask (write-only alternate view of 0xDD0D). Enable or
+    /// disable individual NMI sources without disturbing the others: `set()`
+    /// the sources you want to change, then let `mode()` pick the direction —
+    /// `mode().enabled()` enables every source you `set()`, `mode().disabled()`
+    /// disables them. Sources left `clear()` (the default) are untouched either
+    /// way. Read status via CI2ICR_R. SIDE-EFFECT: this write changes which
+    /// interrupts are enabled.
     #[inline(always)]
     pub const fn ci2icr_w(&self) -> &Ci2icrW {
         unsafe { &*core::ptr::from_ref(self).cast::<u8>().add(13).cast() }
@@ -294,21 +296,25 @@ pub type Ci2icrR = crate::Reg<ci2icr_r::Ci2icrRSpec>;
 /// everything from one read. Set the mask via CI2ICR_W.
 pub mod ci2icr_r;
 /// CI2ICR_W (w) register accessor: Interrupt mask (write-only alternate view of
-/// 0xDD0D). Bit 7 (MODE) is the set/clear selector: with MODE enabled the
-/// source bits you enable are turned on, with MODE disabled they are turned
-/// off; bits left 0 are unchanged. Read status via CI2ICR_R. SIDE-EFFECT: this
-/// write changes which interrupts are enabled.
+/// 0xDD0D). Enable or disable individual NMI sources without disturbing the
+/// others: `set()` the sources you want to change, then let `mode()` pick the
+/// direction — `mode().enabled()` enables every source you `set()`,
+/// `mode().disabled()` disables them. Sources left `clear()` (the default) are
+/// untouched either way. Read status via CI2ICR_R. SIDE-EFFECT: this write
+/// changes which interrupts are enabled.
 ///
 /// You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ci2icr_w::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
 /// For information about available fields see [`mod@ci2icr_w`] module
 #[doc(alias = "CI2ICR_W")]
 pub type Ci2icrW = crate::Reg<ci2icr_w::Ci2icrWSpec>;
-/// Interrupt mask (write-only alternate view of 0xDD0D). Bit 7 (MODE) is the
-/// set/clear selector: with MODE enabled the source bits you enable are turned
-/// on, with MODE disabled they are turned off; bits left 0 are unchanged. Read
-/// status via CI2ICR_R. SIDE-EFFECT: this write changes which interrupts are
-/// enabled.
+/// Interrupt mask (write-only alternate view of 0xDD0D). Enable or disable
+/// individual NMI sources without disturbing the others: `set()` the sources
+/// you want to change, then let `mode()` pick the direction —
+/// `mode().enabled()` enables every source you `set()`, `mode().disabled()`
+/// disables them. Sources left `clear()` (the default) are untouched either
+/// way. Read status via CI2ICR_R. SIDE-EFFECT: this write changes which
+/// interrupts are enabled.
 pub mod ci2icr_w;
 /// CI2CRA (rw) register accessor: Control register A (same layout as CIA1.CRA;
 /// the timer-output bits act on this CIA's PB6)

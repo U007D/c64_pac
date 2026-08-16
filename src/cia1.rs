@@ -90,11 +90,13 @@ impl RegisterBlock {
     #[inline(always)]
     pub const fn ciasdr(&self) -> &Ciasdr { &self.ciasdr }
 
-    /// 0x0d - Interrupt mask (write-only alternate view of 0xDC0D). Bit 7
-    /// (MODE) is the set/clear selector: with MODE enabled the source bits you
-    /// enable are turned on, with MODE disabled they are turned off; bits left
-    /// 0 are unchanged. Read status via CIAICR_R. SIDE-EFFECT: this write
-    /// changes which interrupts are enabled.
+    /// 0x0d - Interrupt mask (write-only alternate view of 0xDC0D). Enable or
+    /// disable individual interrupt sources without disturbing the others:
+    /// `set()` the sources you want to change, then let `mode()` pick the
+    /// direction — `mode().enabled()` enables every source you `set()`,
+    /// `mode().disabled()` disables them. Sources left `clear()` (the default)
+    /// are untouched either way. Read status via CIAICR_R. SIDE-EFFECT: this
+    /// write changes which interrupts are enabled.
     #[inline(always)]
     pub const fn ciaicr_w(&self) -> &CiaicrW {
         unsafe { &*core::ptr::from_ref(self).cast::<u8>().add(13).cast() }
@@ -290,21 +292,25 @@ pub type CiaicrR = crate::Reg<ciaicr_r::CiaicrRSpec>;
 /// everything from one read. Set the mask via CIAICR_W.
 pub mod ciaicr_r;
 /// CIAICR_W (w) register accessor: Interrupt mask (write-only alternate view of
-/// 0xDC0D). Bit 7 (MODE) is the set/clear selector: with MODE enabled the
-/// source bits you enable are turned on, with MODE disabled they are turned
-/// off; bits left 0 are unchanged. Read status via CIAICR_R. SIDE-EFFECT: this
-/// write changes which interrupts are enabled.
+/// 0xDC0D). Enable or disable individual interrupt sources without disturbing
+/// the others: `set()` the sources you want to change, then let `mode()` pick
+/// the direction — `mode().enabled()` enables every source you `set()`,
+/// `mode().disabled()` disables them. Sources left `clear()` (the default) are
+/// untouched either way. Read status via CIAICR_R. SIDE-EFFECT: this write
+/// changes which interrupts are enabled.
 ///
 /// You can [`reset`](crate::Reg::reset), [`write`](crate::Reg::write), [`write_with_zero`](crate::Reg::write_with_zero) this register using [`ciaicr_w::W`]. See [API](https://docs.rs/svd2rust/#read--modify--write-api).
 ///
 /// For information about available fields see [`mod@ciaicr_w`] module
 #[doc(alias = "CIAICR_W")]
 pub type CiaicrW = crate::Reg<ciaicr_w::CiaicrWSpec>;
-/// Interrupt mask (write-only alternate view of 0xDC0D). Bit 7 (MODE) is the
-/// set/clear selector: with MODE enabled the source bits you enable are turned
-/// on, with MODE disabled they are turned off; bits left 0 are unchanged. Read
-/// status via CIAICR_R. SIDE-EFFECT: this write changes which interrupts are
-/// enabled.
+/// Interrupt mask (write-only alternate view of 0xDC0D). Enable or disable
+/// individual interrupt sources without disturbing the others: `set()` the
+/// sources you want to change, then let `mode()` pick the direction —
+/// `mode().enabled()` enables every source you `set()`, `mode().disabled()`
+/// disables them. Sources left `clear()` (the default) are untouched either
+/// way. Read status via CIAICR_R. SIDE-EFFECT: this write changes which
+/// interrupts are enabled.
 pub mod ciaicr_w;
 /// CIACRA (rw) register accessor: Control register A
 ///

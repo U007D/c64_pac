@@ -39,6 +39,14 @@ mv src "$crate/src"
 # once per file, independent of the shell's word-splitting and of ARG_MAX.
 fd --no-ignore --hidden -e rs . "$crate/src" -x sd '#\[no_mangle\]' '#[unsafe(no_mangle)]' {}
 
+# Fix 1b: svd2rust globally reserves `set` as a field-writer method name (it
+# collides with FieldWriter::set, the raw multi-bit value setter). That reserves
+# it even for single-bit BitWriter fields, which have no inherent `set` — so the
+# ICR mask-select variant `Set` is emitted as `set_()`. BitWriter has no `set`,
+# so rename it back to the clean `set()` the API wants. `fn set_(` matches only
+# this method (set_bit stays `fn set_bit(`).
+fd --no-ignore --hidden -e rs . "$crate/src" -x sd 'pub fn set_\(self\)' 'pub fn set(self)' {}
+
 # Fix 2: re-export the shared Color enum at the vic module level, so consumers
 # write `vic::Color` instead of `vic::extcol::Color`. svd2rust must define the enum
 # on some field (EXTCOL's); the border has no special claim on the palette, so
@@ -107,3 +115,12 @@ RUST
 
 # Expose the module at the crate root (appended after the generated items).
 printf '\npub mod bcd;\n' >> "$crate/src/lib.rs"
+
+# Fix 4: annotate shared field types. svd2rust re-exports one canonical field
+# writer/reader under many alias names; jump-to-definition on an alias lands on
+# the canonical type, whose doc describes only its first use. For any type shared
+# across more than one module, append an intra-doc "Shared field type" directory
+# linking every alias, so the reader can click through to each one's own
+# description instead of being stranded on an unrelated register's prose. Runs as
+# a single awk pass over the whole tree (it needs cross-file state).
+awk -f "$crate/svd/patch_shared_docs.awk" $(fd --no-ignore --hidden -e rs . "$crate/src")
