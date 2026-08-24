@@ -57,10 +57,10 @@
       <name>CPUPORT</name>
       <description>
         MOS 6510 on-chip I/O port at addresses 0x0000-0x0001: memory banking control and
-        Datassette lines. NOTE for svd2rust: baseAddress 0 makes the generated RegisterBlock
-        pointer null, which is unsound to dereference in Rust; either exclude this
-        peripheral from generation and hand-write the two accessors, or patch the
-        generated code. KERNAL reset writes D6510=0x2F, R6510=0x37.
+        Datassette lines. KERNAL reset writes D6510=0x2F, R6510=0x37. baseAddress 0 puts
+        D6510 at address 0, where the generated Periph Deref would form a null reference,
+        so this peripheral is hand-written over the generated output by
+        svd/generate_c64_pac.sh, Fix 5.
       </description>
       <baseAddress>0x0000</baseAddress>
       <addressBlock>

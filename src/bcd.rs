@@ -17,29 +17,23 @@ impl<const MIN: u8, const MAX: u8> Bcd<MIN, MAX> {
     }
 
     /// The decimal value.
-    pub const fn get(self) -> u8 {
-        (self.0 >> 4) * 10 + (self.0 & 0x0F)
-    }
+    pub const fn get(self) -> u8 { (self.0 >> 4) * 10 + (self.0 & 0x0f) }
 
     /// The raw BCD byte, to write into the register.
-    pub const fn to_bcd(self) -> u8 {
-        self.0
-    }
+    pub const fn to_bcd(self) -> u8 { self.0 }
 
     /// From a BCD byte read from the register; `None` if a nibble is not a
     /// decimal digit or the decoded value is out of range.
     pub const fn from_bcd(byte: u8) -> Option<Self> {
-        if (byte >> 4) > 9 || (byte & 0x0F) > 9 {
+        if (byte >> 4) > 9 || (byte & 0x0f) > 9 {
             return None;
         }
-        Self::new((byte >> 4) * 10 + (byte & 0x0F))
+        Self::new((byte >> 4) * 10 + (byte & 0x0f))
     }
 }
 
 impl<const MIN: u8, const MAX: u8> core::fmt::Debug for Bcd<MIN, MAX> {
-    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        write!(f, "{}", self.get())
-    }
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result { write!(f, "{}", self.get()) }
 }
 
 /// TOD tenths of a second (0-9).

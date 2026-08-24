@@ -23,21 +23,73 @@ use generic::*;
 /// Common register and bit access and modify traits
 pub mod generic;
 /// MOS 6510 on-chip I/O port at addresses 0x0000-0x0001: memory banking control
-/// and Datassette lines. NOTE for svd2rust: baseAddress 0 makes the generated
-/// RegisterBlock pointer null, which is unsound to dereference in Rust; either
-/// exclude this peripheral from generation and hand-write the two accessors, or
-/// patch the generated code. KERNAL reset writes D6510=0x2F, R6510=0x37.
-pub type Cpuport = crate::Periph<cpuport::RegisterBlock, 0>;
+/// and Datassette lines. KERNAL reset writes D6510=0x2F, R6510=0x37.
+///
+/// Hand-written, not generated: with `baseAddress` 0 the generated
+/// `Periph<RegisterBlock, 0>` would reach both registers through a
+/// `&RegisterBlock` at address 0 — a null reference. This type hands them out
+/// directly instead: `r6510()` as an ordinary `&Reg` at 0x0001, `d6510()` as a
+/// [`cpuport::D6510Port`] doing volatile access at 0x0000.
+///
+/// Re-applied after every regeneration by `svd/generate_c64_pac.sh`, Fix 5.
+pub struct Cpuport {
+    /// `*const ()` rather than `()`: makes the handle `!Send + !Sync`, matching
+    /// `Periph`.
+    _marker: core::marker::PhantomData<*const ()>,
+}
+unsafe impl Send for Cpuport {}
+impl Cpuport {
+    /// Steal an instance of this peripheral
+    ///
+    /// # Safety
+    ///
+    /// Ensure that the new instance of the peripheral cannot be used in a way
+    /// that may race with any existing instances, for example by only
+    /// accessing read-only or write-only registers, or by consuming the
+    /// original peripheral and using critical sections to coordinate
+    /// access between multiple new instances.
+    ///
+    /// Additionally, other software such as HALs may rely on only one
+    /// peripheral instance existing to ensure memory safety; ensure
+    /// no stolen instances are passed to such software.
+    pub unsafe fn steal() -> Self { Self { _marker: core::marker::PhantomData } }
+
+    /// 0x00 - Data-direction register for the 6510's on-chip I/O port (R6510):
+    /// one bit per line, 1 = output, 0 = input. The 6510 is a 6502 with this
+    /// 6-bit port bolted on; it is the whole reason the C64 can map 64 KiB RAM
+    /// + 20 KiB ROM + 4 KiB I/O (= 88 KiB (!)) into a single 64 KiB address
+    /// space with no external MMU. KERNAL reset writes 0x2F (0b0010_1111):
+    /// lines 0-3 and 5 are outputs, line 4 (cassette sense) is an input, and
+    /// bits 6-7 are unused (no port line). Written before R6510 during reset.
+    /// The RAM byte physically at 0x0000 still exists but is hidden behind the
+    /// port.
+    ///
+    /// Returns a [`cpuport::D6510Port`] token rather than a `&D6510`; it
+    /// carries the same `read`/`write`/`modify` API.
+    #[inline(always)]
+    pub const fn d6510(&self) -> cpuport::D6510Port { cpuport::D6510Port::new() }
+
+    /// 0x01 - Banking and Datassette port. Reads return pin state for input
+    /// bits.
+    #[inline(always)]
+    pub fn r6510(&self) -> &cpuport::R6510 {
+        // SAFETY: 0x0001 is the R6510 hardware register — non-null,
+        // byte-aligned, outside every Rust allocation, and `Reg` wraps a
+        // `VolatileCell` so shared access is the correct shape. The same
+        // reference `Periph::deref` forms for every other peripheral.
+        unsafe { &*(0x0001 as *const cpuport::R6510) }
+    }
+}
 impl core::fmt::Debug for Cpuport {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         f.debug_struct("Cpuport").finish()
     }
 }
 /// MOS 6510 on-chip I/O port at addresses 0x0000-0x0001: memory banking control
-/// and Datassette lines. NOTE for svd2rust: baseAddress 0 makes the generated
-/// RegisterBlock pointer null, which is unsound to dereference in Rust; either
-/// exclude this peripheral from generation and hand-write the two accessors, or
-/// patch the generated code. KERNAL reset writes D6510=0x2F, R6510=0x37.
+/// and Datassette lines. KERNAL reset writes D6510=0x2F, R6510=0x37.
+/// baseAddress 0 puts D6510 at address 0, where the generated Periph Deref
+/// would form a null reference, so this peripheral is hand-written over the
+/// generated output by svd/generate_c64_pac.sh, Fix 5.
 pub mod cpuport;
 /// VIC-II video interface (6567 NTSC / 6569 PAL) at 0xD000. Register image
 /// repeats every 0x40 bytes through 0xD3FF. Unimplemented bits read as 1.
@@ -211,5 +263,4 @@ impl Peripherals {
                       io2: Io2::steal() }
     }
 }
-
 pub mod bcd;

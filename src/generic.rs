@@ -676,3 +676,25 @@ impl<REG: Readable> core::fmt::Debug for crate::generic::Reg<REG> where R<REG>: 
         core::fmt::Debug::fmt(&self.read(), f)
     }
 }
+
+/// Constructors for the register reader/writer, from raw bits.
+///
+/// `Reg`'s own methods build `R`/`W` inline, so svd2rust emits no constructor.
+/// The hand-written `cpuport::D6510Port` reaches its register through
+/// `ptr::read_volatile`/`write_volatile` rather than through a `&Reg` — see
+/// that type for why — so it has to build them itself, and `raw::{R, W}::_reg`
+/// is `pub(super)`, visible only from here in `generic`.
+impl<REG: RegisterSpec> R<REG> {
+    #[allow(unused)]
+    #[inline(always)]
+    pub(crate) const fn from_bits(bits: REG::Ux) -> Self {
+        Self { bits, _reg: marker::PhantomData }
+    }
+}
+impl<REG: RegisterSpec> W<REG> {
+    #[allow(unused)]
+    #[inline(always)]
+    pub(crate) const fn from_bits(bits: REG::Ux) -> Self {
+        Self { bits, _reg: marker::PhantomData }
+    }
+}

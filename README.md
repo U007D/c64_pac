@@ -20,7 +20,9 @@ two I/O expansion windows (IO1/IO2) — across **79 registers** and **151 fields
 shared 16-value `Color` enum and the full 1024-nybble color RAM.
 
 ## Quick Start - Generate PAC API
-From the crate root, type `svd/generate_c64_pac.sh`.  You must have `svd2rust` already installed.
+From the crate root, type `svd/generate_c64_pac.sh`.  The script installs any generator tool
+you are missing and leaves alone any you already have, so it needs only `cargo` and a
+nightly `rustfmt` on PATH.
 If the `src` file exists, it will automatically be removed and replaced in its entirety with the
 new generated output.  No interleaving of old and new `src` folder contents will occur.
 
@@ -98,13 +100,19 @@ revisions) that a register map can't express.
 be hand-edited. To regenerate after changing the SVD:
 
 ```sh
-svd/generate_c64_pac.sh     # needs svd2rust, form, sd, fd, and a nightly rustfmt on PATH
+svd/generate_c64_pac.sh     # needs cargo and a nightly rustfmt on PATH
 ```
 
-The script runs svd2rust + [form](https://github.com/djmcgill/form), then applies a few
-mechanical fix-ups (crate-level `#![no_std]`, edition-2024 `unsafe(no_mangle)`, and hoisting
-the shared `Color` enum to `vic::Color`), and rewrites `src/` in place. It does **not** require
-the C64 cross-toolchain — it only emits source.
+The script first `cargo install`s, unpinned, whichever of its generator tools are absent —
+svd2rust, [form](https://github.com/djmcgill/form), sd, fd — and leaves any you already have
+in place, however you installed them. If your svd2rust differs from the version that
+produced the current `src/` it says so and continues: the generated API shape tracks the
+generator's version, so that is the difference between a small diff and a total rewrite. It
+then runs svd2rust + form and applies a
+few fix-ups (crate-level `#![no_std]`, the hand-written `bcd` module, edition-2024
+`unsafe(no_mangle)`, hoisting the shared `Color` enum to `vic::Color`, and hand-writing the
+CPUPORT peripheral, whose base address of 0 rules out the generated `Deref`), then rewrites
+`src/` in place. It does **not** require the C64 cross-toolchain — it only emits source.
 
 ## License
 
