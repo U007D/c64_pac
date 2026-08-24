@@ -406,3 +406,25 @@ mv "$work/lib.rs" "$crate/src/lib.rs"
 # description instead of being stranded on an unrelated register's prose. Runs as
 # a single awk pass over the whole tree (it needs cross-file state).
 awk -f "$crate/svd/patch_shared_docs.awk" $(fd --no-ignore --hidden -e rs . "$crate/src")
+
+# Fix 7: give YSCROLL its coupling table. svd2rust collapses every <description>
+# to a single line, so a table cannot come from the SVD - but the value is
+# dictated by ROW_SELECT, and a table is the only way to say that at a glance.
+# The pattern matches both accessors: the writer, where the value is chosen, and
+# the reader, where it explains what a 3 means. Runs after the format step, so
+# rustfmt never reflows it.
+sd '(?m)^    #\[inline\(always\)\]\n    pub fn yscroll' '    ///
+    /// | `ROW_SELECT` | first display line | `YSCROLL` | first Bad Line |
+    /// |---|---|---|---|
+    /// | `Rows25` | raster 51 | 3 | 48 + 3 = 51 |
+    /// | `Rows24` | raster 55 | 7 | 48 + 7 = 55 |
+    #[inline(always)]
+    pub fn yscroll' "$crate/src/vic/scroly.rs"
+
+# Fix 8: restore markdown links in descriptions. svd2rust escapes every `[` and
+# `]` it emits, so rustdoc cannot read a stray bracket as an intra-doc link -
+# which also defeats any real link the SVD writes, leaving a bare URL that
+# rustdoc then warns about. Unescape only bracket pairs immediately followed by
+# `(`, i.e. the ones forming a link; every other bracket keeps its escape and
+# svd2rust's protection with it.
+fd --no-ignore --hidden -e rs . "$crate/src" -x sd '\\\[([^\]]+)\\\]\(' '[${1}](' {}

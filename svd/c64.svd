@@ -270,14 +270,14 @@
           <fields>
             <field>
               <name>YSCROLL</name>
-              <description>Vertical fine scroll (0-7)</description>
+              <description>Vertical fine scroll, and the Bad Line selector. A Bad Line is a raster line on which the VIC-II stalls the CPU to fetch the next row of screen and colour data; the first of each frame is raster 48 + YSCROLL, and that is the line character row 0 starts on. ROW_SELECT sets the first line of the display window - everything on screen that is not border - so only one YSCROLL puts row 0 on that line; the rest slide the character grid and clip the top row behind the border. That sliding is the scroll. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4, 3.7 and 3.9.)</description>
               <bitOffset>0</bitOffset>
               <bitWidth>3</bitWidth>
               <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
             </field>
             <field>
               <name>ROW_SELECT</name>
-              <description>Text area height: 24 or 25 rows</description>
+              <description>Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)</description>
               <bitOffset>3</bitOffset>
               <bitWidth>1</bitWidth>
               <enumeratedValues>
@@ -430,17 +430,45 @@
           <fields>
             <field>
               <name>CHAR_BASE</name>
-              <description>Character/bitmap base address bits 13:11. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 1 bit. Therefore the book value must be divided by 2 to supply the correct PAC value.</description>
+              <description>Character/bitmap base, in 2 KiB steps from the base of the current VIC bank (register bits 3:1). [Mapping the C64](https://archive.org/details/Compute_s_Mapping_the_Commodore_64) quotes this as a whole-register value; halve the book value to get the field value, or use the named offsets below.</description>
               <bitOffset>1</bitOffset>
               <bitWidth>3</bitWidth>
-              <writeConstraint><range><minimum>0</minimum><maximum>7</maximum></range></writeConstraint>
+              <enumeratedValues>
+                <name>CharBase</name>
+                <enumeratedValue><name>OFFSET_0000</name><description>Character base at offset 0x0000 within the VIC bank</description><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_0800</name><description>Character base at offset 0x0800 within the VIC bank</description><value>1</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1000</name><description>Character base at offset 0x1000 within the VIC bank - reads the character generator ROM, not RAM, in VIC banks 0 and 2</description><value>2</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1800</name><description>Character base at offset 0x1800 within the VIC bank - reads the character generator ROM, not RAM, in VIC banks 0 and 2</description><value>3</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2000</name><description>Character base at offset 0x2000 within the VIC bank</description><value>4</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2800</name><description>Character base at offset 0x2800 within the VIC bank</description><value>5</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3000</name><description>Character base at offset 0x3000 within the VIC bank</description><value>6</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3800</name><description>Character base at offset 0x3800 within the VIC bank</description><value>7</value></enumeratedValue>
+              </enumeratedValues>
             </field>
             <field>
               <name>VIDEO_MATRIX</name>
-              <description>Video matrix (screen) base address bits 13:10. Note: the value provided by the reference (Mapping the C64) for this field is a whole-register value. This field is offset from register bit 0 by 4 bits. Therefore the book value must be divided by 16 to supply the correct PAC value.</description>
+              <description>Video matrix (screen) base, in 1 KiB steps from the base of the current VIC bank (register bits 7:4). [Mapping the C64](https://archive.org/details/Compute_s_Mapping_the_Commodore_64) quotes this as a whole-register value; divide the book value by 16 to get the field value, or use the named offsets below.</description>
               <bitOffset>4</bitOffset>
               <bitWidth>4</bitWidth>
-              <writeConstraint><range><minimum>0</minimum><maximum>15</maximum></range></writeConstraint>
+              <enumeratedValues>
+                <name>MatrixBase</name>
+                <enumeratedValue><name>OFFSET_0000</name><description>Screen matrix at offset 0x0000 within the VIC bank</description><value>0</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_0400</name><description>Screen matrix at offset 0x0400 within the VIC bank</description><value>1</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_0800</name><description>Screen matrix at offset 0x0800 within the VIC bank</description><value>2</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_0C00</name><description>Screen matrix at offset 0x0C00 within the VIC bank</description><value>3</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1000</name><description>Screen matrix at offset 0x1000 within the VIC bank</description><value>4</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1400</name><description>Screen matrix at offset 0x1400 within the VIC bank</description><value>5</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1800</name><description>Screen matrix at offset 0x1800 within the VIC bank</description><value>6</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_1C00</name><description>Screen matrix at offset 0x1C00 within the VIC bank</description><value>7</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2000</name><description>Screen matrix at offset 0x2000 within the VIC bank</description><value>8</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2400</name><description>Screen matrix at offset 0x2400 within the VIC bank</description><value>9</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2800</name><description>Screen matrix at offset 0x2800 within the VIC bank</description><value>10</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_2C00</name><description>Screen matrix at offset 0x2C00 within the VIC bank</description><value>11</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3000</name><description>Screen matrix at offset 0x3000 within the VIC bank</description><value>12</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3400</name><description>Screen matrix at offset 0x3400 within the VIC bank</description><value>13</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3800</name><description>Screen matrix at offset 0x3800 within the VIC bank</description><value>14</value></enumeratedValue>
+                <enumeratedValue><name>OFFSET_3C00</name><description>Screen matrix at offset 0x3C00 within the VIC bank</description><value>15</value></enumeratedValue>
+              </enumeratedValues>
             </field>
           </fields>
         </register>

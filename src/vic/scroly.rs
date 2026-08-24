@@ -2,11 +2,11 @@
 pub type R = crate::R<ScrolySpec>;
 /// Register `SCROLY` writer
 pub type W = crate::W<ScrolySpec>;
-/// Field `YSCROLL` reader - Vertical fine scroll (0-7)
+/// Field `YSCROLL` reader - Vertical fine scroll, and the Bad Line selector. A Bad Line is a raster line on which the VIC-II stalls the CPU to fetch the next row of screen and colour data; the first of each frame is raster 48 + YSCROLL, and that is the line character row 0 starts on. ROW_SELECT sets the first line of the display window - everything on screen that is not border - so only one YSCROLL puts row 0 on that line; the rest slide the character grid and clip the top row behind the border. That sliding is the scroll. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4, 3.7 and 3.9.)
 pub type YscrollR = crate::FieldReader;
-/// Field `YSCROLL` writer - Vertical fine scroll (0-7)
+/// Field `YSCROLL` writer - Vertical fine scroll, and the Bad Line selector. A Bad Line is a raster line on which the VIC-II stalls the CPU to fetch the next row of screen and colour data; the first of each frame is raster 48 + YSCROLL, and that is the line character row 0 starts on. ROW_SELECT sets the first line of the display window - everything on screen that is not border - so only one YSCROLL puts row 0 on that line; the rest slide the character grid and clip the top row behind the border. That sliding is the scroll. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4, 3.7 and 3.9.)
 pub type YscrollW<'a, REG> = crate::FieldWriter<'a, REG, 3, u8, crate::Safe>;
-/// Text area height: 24 or 25 rows
+/// Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)
 ///
 /// Value on reset: 0
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -20,7 +20,7 @@ impl From<RowSelect> for bool {
     #[inline(always)]
     fn from(variant: RowSelect) -> Self { variant as u8 != 0 }
 }
-/// Field `ROW_SELECT` reader - Text area height: 24 or 25 rows
+/// Field `ROW_SELECT` reader - Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)
 pub type RowSelectR = crate::BitReader<RowSelect>;
 impl RowSelectR {
     /// Get enumerated values variant
@@ -40,7 +40,7 @@ impl RowSelectR {
     #[inline(always)]
     pub fn is_rows25(&self) -> bool { *self == RowSelect::Rows25 }
 }
-/// Field `ROW_SELECT` writer - Text area height: 24 or 25 rows
+/// Field `ROW_SELECT` writer - Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)
 pub type RowSelectW<'a, REG> = crate::BitWriter<'a, REG, RowSelect>;
 impl<'a, REG> RowSelectW<'a, REG> where REG: crate::Writable + crate::RegisterSpec, {
     /// `0`
@@ -172,11 +172,16 @@ pub type Rst8R = crate::BitReader;
 /// compare)
 pub type Rst8W<'a, REG> = crate::BitWriter<'a, REG>;
 impl R {
-    /// Bits 0:2 - Vertical fine scroll (0-7)
+    /// Bits 0:2 - Vertical fine scroll, and the Bad Line selector. A Bad Line is a raster line on which the VIC-II stalls the CPU to fetch the next row of screen and colour data; the first of each frame is raster 48 + YSCROLL, and that is the line character row 0 starts on. ROW_SELECT sets the first line of the display window - everything on screen that is not border - so only one YSCROLL puts row 0 on that line; the rest slide the character grid and clip the top row behind the border. That sliding is the scroll. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4, 3.7 and 3.9.)
+    ///
+    /// | `ROW_SELECT` | first display line | `YSCROLL` | first Bad Line |
+    /// |---|---|---|---|
+    /// | `Rows25` | raster 51 | 3 | 48 + 3 = 51 |
+    /// | `Rows24` | raster 55 | 7 | 48 + 7 = 55 |
     #[inline(always)]
     pub fn yscroll(&self) -> YscrollR { YscrollR::new(self.bits & 7) }
 
-    /// Bit 3 - Text area height: 24 or 25 rows
+    /// Bit 3 - Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)
     #[inline(always)]
     pub fn row_select(&self) -> RowSelectR { RowSelectR::new(((self.bits >> 3) & 1) != 0) }
 
@@ -211,11 +216,16 @@ impl core::fmt::Debug for R {
     }
 }
 impl W {
-    /// Bits 0:2 - Vertical fine scroll (0-7)
+    /// Bits 0:2 - Vertical fine scroll, and the Bad Line selector. A Bad Line is a raster line on which the VIC-II stalls the CPU to fetch the next row of screen and colour data; the first of each frame is raster 48 + YSCROLL, and that is the line character row 0 starts on. ROW_SELECT sets the first line of the display window - everything on screen that is not border - so only one YSCROLL puts row 0 on that line; the rest slide the character grid and clip the top row behind the border. That sliding is the scroll. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4, 3.7 and 3.9.)
+    ///
+    /// | `ROW_SELECT` | first display line | `YSCROLL` | first Bad Line |
+    /// |---|---|---|---|
+    /// | `Rows25` | raster 51 | 3 | 48 + 3 = 51 |
+    /// | `Rows24` | raster 55 | 7 | 48 + 7 = 55 |
     #[inline(always)]
     pub fn yscroll(&mut self) -> YscrollW<'_, ScrolySpec> { YscrollW::new(self, 0) }
 
-    /// Bit 3 - Text area height: 24 or 25 rows
+    /// Bit 3 - Height of the display window - everything on screen that is not border. Rows25 spans raster 51-250, Rows24 only 55-246; switching to Rows24 mid-frame is how the top and bottom borders are opened. Fixes which YSCROLL the display needs - see YSCROLL. ([Bauer, The MOS 6567/6569 video controller (VIC-II)](https://www.cebix.net/VIC-Article.txt), 3.4 and 3.9.)
     #[inline(always)]
     pub fn row_select(&mut self) -> RowSelectW<'_, ScrolySpec> { RowSelectW::new(self, 3) }
 

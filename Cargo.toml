@@ -1,6 +1,6 @@
 [package]
 name = "c64_pac"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 description = "Typed, zero-cost (zero runtime overhead) peripheral access for the Commodore 64's memory-mapped I/O (VIC-II, SID, CIA1/2, color RAM, CPU port), generated from a CMSIS-SVD description with svd2rust."
 license = "MIT OR Apache-2.0"
